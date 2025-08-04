@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 File Dashboard</h1>
+            <div class="status">
+                <span id="status-indicator" class="status-dot offline"></span>
+                <span id="status-text">Loading...</span>
+                <button id="refresh-btn" onclick="refreshFiles()">🔄 Refresh</button>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <!-- File Tree Panel -->
+            <div class="file-tree-panel">
+                <h2>📁 Files</h2>
+                <div class="search-bar">
+                    <input type="text" id="search-input" placeholder="Search files..." onkeyup="filterFiles()">
+                </div>
+                <div id="file-tree" class="file-tree">
+                    <div class="loading">Loading files...</div>
+                </div>
+            </div>
+            
+            <!-- Content Panel -->
+            <div class="content-panel">
+                <div class="content-header">
+                    <h2 id="content-title">Select a file to view</h2>
+                    <div class="content-actions">
+                        <button id="collapse-all" onclick="collapseAll()" style="display: none;">⬆️ Collapse All</button>
+                        <button id="expand-all" onclick="expandAll()" style="display: none;">⬇️ Expand All</button>
+                    </div>
+                </div>
+                <div id="file-content" class="file-content">
+                    <div class="placeholder">
+                        <p>👈 Select a file from the tree to view its content</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/dashboard.js"></script>
+</body>
+</html>

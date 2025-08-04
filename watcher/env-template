@@ -1,0 +1,6 @@
+# Copy this to .env and update values
+# Railway app URL - update this with your deployed Railway URL
+RAILWAY_URL=http://localhost:8000
+
+# Log level (DEBUG, INFO, WARNING, ERROR)
+LOG_LEVEL=INFO
