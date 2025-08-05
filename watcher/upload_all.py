@@ -58,8 +58,8 @@ def main():
             
         print(f"\n📂 Processing: {watch_path}")
         
-        # Find all JSON files
-        for file_path in watch_path.rglob("*.json"):
+        # Find all JSON and TXT files
+        for file_path in list(watch_path.rglob("*.json")) + list(watch_path.rglob("*.txt")):
             total_files += 1
             relative_path = file_path.relative_to(PROJECT_ROOT)
             
