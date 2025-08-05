@@ -189,31 +189,95 @@
             margin-bottom: 16px;
         }
 
-        .metadata-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 16px;
-        }
-
-        .metadata-item {
+        .metadata-list {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 16px;
         }
 
-        .metadata-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: #64748b;
-            text-transform: uppercase;
-            margin-bottom: 4px;
+        .metadata-grid-2col {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
         }
 
-        .metadata-value {
-            font-size: 14px;
+        .metadata-column {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metadata-row {
+            margin-bottom: 12px;
+            line-height: 1.5;
             color: #1e293b;
-            word-break: break-word;
+        }
+
+        .metadata-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .metadata-row strong {
+            color: #475569;
+            font-weight: 600;
+            min-width: 140px;
+            display: inline-block;
+        }
+
+        /* Story Information Styles */
+        .story-header-fixed {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .story-header {
+            margin-bottom: 20px;
+        }
+
+        .story-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .story-year {
+            color: #64748b;
+            font-weight: 400;
+            font-size: 24px;
+        }
+
+        .story-author {
+            color: #64748b;
+            font-size: 18px;
+            margin: 0;
+            font-style: italic;
+        }
+
+        .story-summary {
+            border-top: 1px solid #e2e8f0;
+            padding-top: 16px;
+        }
+
+        .story-summary h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .story-summary p {
+            color: #4b5563;
+            line-height: 1.6;
+            margin: 0;
         }
 
         .chunk-item {
@@ -263,40 +327,187 @@
                 <button class="control-button" onclick="collapseAll()">Collapse All</button>
             </div>
 
-            <!-- Main Content Section -->
-            <div class="collapsible-section">
-                <div class="section-header" onclick="toggleSection('main-content')">
-                    <div class="section-header-left">
-                        <span class="section-icon">📄</span>
-                        <span class="section-title">Story Content</span>
-                    </div>
-                    <span class="toggle-icon expanded" id="main-content-icon">▶</span>
+            <!-- Story Information -->
+            {% if item.story_info and item.story_info.title %}
+            <div class="story-header-fixed">
+                <h2 class="story-title">{{ item.story_info.title }} <span class="story-year">{{ item.story_info.publication_year }}</span></h2>
+                {% if item.story_info.author %}
+                <p class="story-author">Author: {{ item.story_info.author }}</p>
+                {% endif %}
+                {% if item.story_info.plot_summary %}
+                <div class="story-summary">
+                    <h3>Plot Summary</h3>
+                    <p>{{ item.story_info.plot_summary }}</p>
                 </div>
-                <div class="section-content expanded" id="main-content">
-                    <div class="content-block">{{ item.content }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Chunk Metadata Section (Universal) -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection('chunk-metadata')">
+                    <div class="section-header-left">
+                        <span class="section-icon">🔧</span>
+                        <span class="section-title">Chunk Metadata</span>
+                    </div>
+                    <span class="toggle-icon" id="chunk-metadata-icon">▶</span>
+                </div>
+                <div class="section-content collapsed" id="chunk-metadata">
+                    <div class="metadata-grid-2col">
+                        <div class="metadata-column">
+                            <div class="metadata-row">
+                                <strong>Method:</strong> {{ item.chunk_metadata.chunking_method|replace('_', ' ')|title }}
+                            </div>
+                            {% if item.chunk_metadata.chunking_params.chunk_size %}
+                            <div class="metadata-row">
+                                <strong>Chunk Size:</strong> {{ "{:,}".format(item.chunk_metadata.chunking_params.chunk_size) }} characters
+                            </div>
+                            {% endif %}
+                            {% if item.chunk_metadata.chunking_params.delimiter %}
+                            <div class="metadata-row">
+                                <strong>Delimiter:</strong> "{{ item.chunk_metadata.chunking_params.delimiter|replace('\n', '\\n')|replace('\t', '\\t')|replace('\r', '\\r') }}"
+                            </div>
+                            {% endif %}
+                            {% if item.chunk_metadata.chunking_timestamp %}
+                            <div class="metadata-row">
+                                <strong>Processed:</strong> {{ item.chunk_metadata.chunking_timestamp }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="metadata-column">
+                            {% if item.chunk_metadata.chunking_stats.num_chunks %}
+                            <div class="metadata-row">
+                                <strong>Number of Chunks:</strong> {{ item.chunk_metadata.chunking_stats.num_chunks }}
+                            </div>
+                            {% endif %}
+                            {% if item.chunk_metadata.chunking_stats.avg_chunk_size %}
+                            <div class="metadata-row">
+                                <strong>Average Size:</strong> {{ "{:,.0f}".format(item.chunk_metadata.chunking_stats.avg_chunk_size) }} characters
+                            </div>
+                            {% endif %}
+                            {% if item.chunk_metadata.chunking_stats.min_chunk_size and item.chunk_metadata.chunking_stats.max_chunk_size %}
+                            <div class="metadata-row">
+                                <strong>Size Range:</strong> {{ "{:,}".format(item.chunk_metadata.chunking_stats.min_chunk_size) }} - {{ "{:,}".format(item.chunk_metadata.chunking_stats.max_chunk_size) }}
+                            </div>
+                            {% endif %}
+                            {% if item.chunk_metadata.chunking_stats.original_length %}
+                            <div class="metadata-row">
+                                <strong>Original Length:</strong> {{ "{:,}".format(item.chunk_metadata.chunking_stats.original_length) }} characters
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {% if item.related_chunks %}
-            <!-- Related Chunks Section -->
+            <!-- Crimes and Clues Section (BMDS only) -->
+            {% if dataset == "bmds" and item.crimes_metadata %}
             <div class="collapsible-section">
-                <div class="section-header" onclick="toggleSection('related-chunks')">
+                <div class="section-header" onclick="toggleSection('crimes-clues')">
                     <div class="section-header-left">
-                        <span class="section-icon">🧩</span>
-                        <span class="section-title">Related Chunks</span>
+                        <span class="section-icon">🔍</span>
+                        <span class="section-title">Crimes and Clues</span>
                     </div>
-                    <span class="toggle-icon" id="related-chunks-icon">▶</span>
+                    <span class="toggle-icon" id="crimes-clues-icon">▶</span>
                 </div>
-                <div class="section-content collapsed" id="related-chunks">
-                    {% for chunk in item.related_chunks %}
-                    <div class="chunk-item">
-                        <div class="chunk-header">{{ chunk.id }}</div>
-                        <div class="chunk-content">{{ chunk.content }}</div>
+                <div class="section-content collapsed" id="crimes-clues">
+                    <div class="metadata-grid-2col">
+                        <div class="metadata-column">
+                            <!-- Victim/Culprit Counts -->
+                            <div class="metadata-row">
+                                <strong>Victims:</strong> 
+                                {% set victim_parts = [] %}
+                                {% if item.crimes_metadata.victims_male > 0 %}{% set _ = victim_parts.append(item.crimes_metadata.victims_male ~ " Male") %}{% endif %}
+                                {% if item.crimes_metadata.victims_female > 0 %}{% set _ = victim_parts.append(item.crimes_metadata.victims_female ~ " Female") %}{% endif %}
+                                {% if item.crimes_metadata.victims_unknown > 0 %}{% set _ = victim_parts.append(item.crimes_metadata.victims_unknown ~ " Unknown") %}{% endif %}
+                                {% if item.crimes_metadata.victims_nonbinary > 0 %}{% set _ = victim_parts.append(item.crimes_metadata.victims_nonbinary ~ " Non-binary") %}{% endif %}
+                                {{ victim_parts|join(", ") if victim_parts else "None" }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Culprits:</strong> 
+                                {% set culprit_parts = [] %}
+                                {% if item.crimes_metadata.culprits_male > 0 %}{% set _ = culprit_parts.append(item.crimes_metadata.culprits_male ~ " Male") %}{% endif %}
+                                {% if item.crimes_metadata.culprits_female > 0 %}{% set _ = culprit_parts.append(item.crimes_metadata.culprits_female ~ " Female") %}{% endif %}
+                                {% if item.crimes_metadata.culprits_unknown > 0 %}{% set _ = culprit_parts.append(item.crimes_metadata.culprits_unknown ~ " Unknown") %}{% endif %}
+                                {% if item.crimes_metadata.culprits_nonbinary > 0 %}{% set _ = culprit_parts.append(item.crimes_metadata.culprits_nonbinary ~ " Non-binary") %}{% endif %}
+                                {{ culprit_parts|join(", ") if culprit_parts else "None" }}
+                            </div>
+                            
+                            <!-- Crime Information -->
+                            <div class="metadata-row">
+                                <strong>Crimes:</strong> {{ item.crimes_metadata.types_of_qrimes }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Crime Trajectory:</strong> {{ item.crimes_metadata.crime_trajectory }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Motives:</strong> {{ item.crimes_metadata.motives }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Means (murder only):</strong> {{ item.crimes_metadata.means_murder }}
+                            </div>
+                        </div>
+                        
+                        <div class="metadata-column">
+                            <!-- Clue Information -->
+                            <div class="metadata-row">
+                                <strong>Essential Clue:</strong> {{ item.crimes_metadata.essential_clue }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Most Salient Clue:</strong> {{ item.crimes_metadata.most_salient_clue }}
+                            </div>
+                            
+                            <!-- Analysis Results -->
+                            <div class="metadata-row">
+                                <strong>Correct Annotator Guess:</strong> {{ item.crimes_metadata.correct_annotator_guess }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Recommend:</strong> {{ item.crimes_metadata.recommend_to_friend }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Planted/Fabricated Evidence:</strong> {{ item.crimes_metadata.planted_evidence }}
+                            </div>
+                        </div>
                     </div>
-                    {% endfor %}
                 </div>
             </div>
             {% endif %}
+
+            <!-- Text Section with Nested Chunks -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection('text-content')">
+                    <div class="section-header-left">
+                        <span class="section-icon">📄</span>
+                        <span class="section-title">Text</span>
+                    </div>
+                    <span class="toggle-icon" id="text-content-icon">▶</span>
+                </div>
+                <div class="section-content collapsed" id="text-content">
+                    {% if item.full_content.documents and item.full_content.documents[0].chunks %}
+                    <!-- Individual Chunk Dropdowns -->
+                    {% for chunk in item.full_content.documents[0].chunks %}
+                    <div class="collapsible-section" style="margin: 12px 0; border: 1px solid #e5e7eb;">
+                        <div class="section-header" onclick="toggleSection('chunk-{{ loop.index }}')">
+                            <div class="section-header-left">
+                                <span class="section-icon">📝</span>
+                                <span class="section-title">Chunk {{ loop.index }}</span>
+                            </div>
+                            <span class="toggle-icon" id="chunk-{{ loop.index }}-icon">▶</span>
+                        </div>
+                        <div class="section-content collapsed" id="chunk-{{ loop.index }}">
+                            <div class="content-block">{{ chunk }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <!-- Fallback if no chunks available -->
+                    <div class="content-block">{{ item.content }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+
 
             {% if false %}
             <!-- Parameters Section -->
@@ -325,37 +536,6 @@
                 </div>
                 <div class="section-content collapsed" id="full-data">
                     <div class="json-content">{{ item.full_content | tojson(indent=2) }}</div>
-                </div>
-            </div>
-
-            <!-- Metadata Section -->
-            <div class="collapsible-section">
-                <div class="section-header" onclick="toggleSection('metadata')">
-                    <div class="section-header-left">
-                        <span class="section-icon">📊</span>
-                        <span class="section-title">Metadata</span>
-                    </div>
-                    <span class="toggle-icon" id="metadata-icon">▶</span>
-                </div>
-                <div class="section-content collapsed" id="metadata">
-                    <div class="metadata-grid">
-                        <div class="metadata-item">
-                            <div class="metadata-label">File Size</div>
-                            <div class="metadata-value">{{ (item.file_size / 1024) | round(1) }} KB</div>
-                        </div>
-                        <div class="metadata-item">
-                            <div class="metadata-label">Last Modified</div>
-                            <div class="metadata-value">{{ item.modified[:19] | replace('T', ' ') }}</div>
-                        </div>
-                        <div class="metadata-item">
-                            <div class="metadata-label">Collection</div>
-                            <div class="metadata-value">{{ item.collection_name }}</div>
-                        </div>
-                        <div class="metadata-item">
-                            <div class="metadata-label">Item ID</div>
-                            <div class="metadata-value">{{ item.id }}</div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
