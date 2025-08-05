@@ -242,14 +242,15 @@
     <header class="header">
         <div class="container">
             <div class="header-content">
-                <a href="/{{ collection }}" class="back-button">← Back to {{ collection.title() }}</a>
+                <a href="/{{ dataset }}/{{ subcollection }}" class="back-button">← Back to {{ subcollection | replace("_", " ") | title }}</a>
                 <div>
                     <h1>{{ item.name }}</h1>
                 </div>
             </div>
             <div class="breadcrumb">
-                <a href="/">Home</a> › 
-                <a href="/{{ collection }}">{{ collection.title() }}</a> › 
+                <a href="/">Dashboard</a> › 
+                <a href="/{{ dataset }}">{{ dataset | upper }}</a> › 
+                <a href="/{{ dataset }}/{{ subcollection }}">{{ subcollection | replace("_", " ") | title }}</a> › 
                 {{ item.name }}
             </div>
         </div>
@@ -267,22 +268,16 @@
                 <div class="section-header" onclick="toggleSection('main-content')">
                     <div class="section-header-left">
                         <span class="section-icon">📄</span>
-                        <span class="section-title">
-                            {% if collection == 'chunks' %}Document Content{% else %}Template Content{% endif %}
-                        </span>
+                        <span class="section-title">Story Content</span>
                     </div>
                     <span class="toggle-icon expanded" id="main-content-icon">▶</span>
                 </div>
                 <div class="section-content expanded" id="main-content">
-                    {% if collection == 'chunks' %}
-                        <div class="content-block">{{ item.content }}</div>
-                    {% else %}
-                        <div class="content-block">{{ item.template }}</div>
-                    {% endif %}
+                    <div class="content-block">{{ item.content }}</div>
                 </div>
             </div>
 
-            {% if collection == 'chunks' and item.related_chunks %}
+            {% if item.related_chunks %}
             <!-- Related Chunks Section -->
             <div class="collapsible-section">
                 <div class="section-header" onclick="toggleSection('related-chunks')">
@@ -303,7 +298,7 @@
             </div>
             {% endif %}
 
-            {% if collection == 'prompts' and item.parameters %}
+            {% if false %}
             <!-- Parameters Section -->
             <div class="collapsible-section">
                 <div class="section-header" onclick="toggleSection('parameters')">

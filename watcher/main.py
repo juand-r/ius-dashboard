@@ -108,9 +108,11 @@ class FileUploadHandler(FileSystemEventHandler):
         path_obj = Path(filepath)
         
         if not self.should_process_file(path_obj):
+            logger.debug(f"Skipping file (doesn't match criteria): {filepath}")
             return
         
         logger.info(f"File {event_type}: {filepath}")
+        logger.debug(f"Processing file: {filepath}")
         self.debouncer.trigger(filepath)
     
     def handle_delete_event(self, filepath: str):

@@ -1,0 +1,9 @@
+{
+  "name": "test-prompt",
+  "template": "Test prompt template: {input_text}",
+  "parameters": {
+    "max_tokens": 100,
+    "temperature": 0.7
+  },
+  "created": "2025-08-05T01:17:38.484935Z"
+}

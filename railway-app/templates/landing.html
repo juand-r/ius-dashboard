@@ -120,21 +120,21 @@
     <header class="header">
         <div class="container">
             <h1>IUS Processing Dashboard</h1>
-            <p>Incremental summarization experiments!</p>
+            <p>Monitor and explore datasets and stories</p>
         </div>
     </header>
 
     <main class="main-content">
         <div class="container">
             <div class="datasets-grid">
-                {% for collection in collections %}
-                <a href="{{ collection.path }}" class="dataset-card">
-                    <h2>{{ collection.display_name }}</h2>
-                    <p>{{ collection.description }}</p>
+                {% for dataset in collections %}
+                <a href="{{ dataset.path }}" class="dataset-card">
+                    <h2>{{ dataset.display_name }}</h2>
+                    <p>{{ dataset.description }}</p>
                     <div class="dataset-stats">
                         <div class="stat">
-                            <span class="stat-number">{{ collection.count }}</span>
-                            <span>items</span>
+                            <span class="stat-number">{{ dataset.count }}</span>
+                            <span>stories</span>
                         </div>
                     </div>
                 </a>

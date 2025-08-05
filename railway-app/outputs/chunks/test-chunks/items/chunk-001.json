@@ -1,0 +1,10 @@
+{
+  "id": "test-chunk-001",
+  "content": "This is a test chunk created to verify the file watcher system.",
+  "metadata": {
+    "source": "test-document",
+    "position": 0,
+    "size": 67,
+    "timestamp": "2025-08-05T01:17:38.484934Z"
+  }
+}

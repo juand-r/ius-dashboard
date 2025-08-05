@@ -48,6 +48,20 @@ async def health_check():
     """Health check endpoint for the watcher to test connectivity."""
     return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
 
+@app.delete("/clear-data")
+async def clear_data():
+    """Clear all data from the dashboard (for testing)."""
+    import shutil
+    try:
+        if DATA_DIR.exists():
+            shutil.rmtree(DATA_DIR)
+            DATA_DIR.mkdir(parents=True, exist_ok=True)
+        logger.info("All data cleared from dashboard")
+        return {"status": "success", "message": "All data cleared"}
+    except Exception as e:
+        logger.error(f"Error clearing data: {e}")
+        return {"status": "error", "message": str(e)}
+
 
 @app.post("/upload")
 async def upload_file(
@@ -184,31 +198,48 @@ async def landing_page(request: Request):
         "collections": collections
     })
 
-@app.get("/{collection}", response_class=HTMLResponse)
-async def collection_page(request: Request, collection: str):
+@app.get("/{dataset}", response_class=HTMLResponse)
+async def dataset_page(request: Request, dataset: str):
     """
-    Collection page showing items (like detective stories list).
+    Dataset page showing subcollections/approaches (bmds_fixed_size_8000, etc).
     """
-    items = await get_collection_items(collection)
-    collection_info = await get_collection_info(collection)
+    subcollections = await get_dataset_subcollections(dataset)
+    dataset_info = await get_collection_info(dataset)
+    
+    return templates.TemplateResponse("dataset.html", {
+        "request": request,
+        "dataset": dataset,
+        "dataset_info": dataset_info,
+        "subcollections": subcollections
+    })
+
+@app.get("/{dataset}/{subcollection}", response_class=HTMLResponse)
+async def subcollection_page(request: Request, dataset: str, subcollection: str):
+    """
+    Subcollection page showing stories/items within a specific approach.
+    """
+    items = await get_collection_items(dataset, subcollection)
+    dataset_info = await get_collection_info(dataset)
     
     return templates.TemplateResponse("collection.html", {
         "request": request,
-        "collection": collection,
-        "collection_info": collection_info,
+        "dataset": dataset,
+        "subcollection": subcollection,
+        "collection_info": dataset_info,
         "items": items
     })
 
-@app.get("/{collection}/item/{item_id}", response_class=HTMLResponse)
-async def item_detail(request: Request, collection: str, item_id: str):
+@app.get("/{dataset}/{subcollection}/item/{item_id}", response_class=HTMLResponse)
+async def item_detail(request: Request, dataset: str, subcollection: str, item_id: str):
     """
     Item detail page with collapsible sections (like detective story detail).
     """
-    item_data = await get_item_details(collection, item_id)
+    item_data = await get_item_details(dataset, item_id)
     
     return templates.TemplateResponse("item_detail.html", {
         "request": request,
-        "collection": collection,
+        "dataset": dataset,
+        "subcollection": subcollection,
         "item": item_data
     })
 
@@ -221,57 +252,123 @@ async def legacy_dashboard(request: Request):
 
 
 async def get_collections():
-    """Get available collections for landing page."""
-    collections = []
+    """Get available datasets for landing page (organized by dataset name)."""
+    datasets = {}
     
-    if (DATA_DIR / "outputs" / "chunks").exists():
-        chunk_count = sum(1 for _ in (DATA_DIR / "outputs" / "chunks").rglob("*.json"))
-        collections.append({
-            "name": "chunks",
-            "display_name": "Text Chunks",
-            "description": "Processed document segments and analysis",
-            "count": chunk_count,
-            "path": "/chunks"
-        })
+    # Extract datasets from chunk directories
+    chunks_dir = DATA_DIR / "outputs" / "chunks"
+    if not chunks_dir.exists():
+        return []
+        
+    try:
+        for collection_dir in chunks_dir.iterdir():
+            if collection_dir.is_dir():
+                # Extract dataset name (everything before first underscore)
+                dataset_name = collection_dir.name.split('_')[0]
+                
+                if dataset_name not in datasets:
+                    datasets[dataset_name] = {
+                        "name": dataset_name,
+                        "display_name": dataset_name.upper(),
+                        "description": f"{dataset_name.upper()} dataset stories and analysis",
+                        "count": 0,
+                        "path": f"/{dataset_name}"
+                    }
+                
+                # Count items in this collection
+                items_dir = collection_dir / "items"
+                if items_dir.exists():
+                    item_count = len(list(items_dir.glob("*.json")))
+                    datasets[dataset_name]["count"] += item_count
+    except OSError as e:
+        logger.error(f"Error reading chunks directory: {e}")
+        return []
     
-    if (DATA_DIR / "prompts").exists():
-        prompt_count = sum(1 for _ in (DATA_DIR / "prompts").rglob("*.json"))
-        collections.append({
-            "name": "prompts", 
-            "display_name": "Prompts & Templates",
-            "description": "Processing instructions and methods",
-            "count": prompt_count,
-            "path": "/prompts"
-        })
-    
-    return collections
+    return list(datasets.values())
 
-async def get_collection_info(collection: str):
-    """Get collection metadata."""
-    if collection == "chunks":
-        return {
-            "name": "chunks",
-            "display_name": "Text Chunks",
-            "description": "Processed document segments and analysis"
-        }
-    elif collection == "prompts":
-        return {
-            "name": "prompts",
-            "display_name": "Prompts & Templates", 
-            "description": "Processing instructions and methods"
-        }
-    else:
-        return {"name": collection, "display_name": collection.title(), "description": ""}
+async def get_collection_info(dataset: str):
+    """Get dataset metadata."""
+    return {
+        "name": dataset,
+        "display_name": dataset.upper(),
+        "description": f"{dataset.upper()} dataset stories and analysis"
+    }
 
-async def get_collection_items(collection: str):
-    """Get items in a collection (like detective stories)."""
+async def get_dataset_subcollections(dataset: str):
+    """Get subcollections (approaches) within a dataset."""
+    subcollections = []
+    
+    chunks_dir = DATA_DIR / "outputs" / "chunks"
+    if not chunks_dir.exists():
+        return []
+        
+    try:
+        for collection_dir in chunks_dir.iterdir():
+            if collection_dir.is_dir() and collection_dir.name.startswith(f"{dataset}_"):
+                # Count items in this subcollection
+                items_dir = collection_dir / "items"
+                item_count = 0
+                if items_dir.exists():
+                    item_count = len(list(items_dir.glob("*.json")))
+                
+                # Create display name from collection name
+                display_name = collection_dir.name.replace("_", " ").title()
+                
+                subcollections.append({
+                    "name": collection_dir.name,
+                    "display_name": display_name,
+                    "description": f"{display_name} approach",
+                    "count": item_count,
+                    "path": f"/{dataset}/{collection_dir.name}"
+                })
+    except OSError as e:
+        logger.error(f"Error reading dataset subcollections for {dataset}: {e}")
+        return []
+    
+    return sorted(subcollections, key=lambda x: x["name"])
+
+async def get_collection_items(dataset: str, subcollection: str = None):
+    """Get items (stories) in a specific subcollection or all subcollections in a dataset."""
     items = []
     
-    if collection == "chunks":
-        chunks_dir = DATA_DIR / "outputs" / "chunks"
-        if chunks_dir.exists():
+    chunks_dir = DATA_DIR / "outputs" / "chunks"
+    if not chunks_dir.exists():
+        return []
+        
+    try:
+        # If subcollection is specified, only get items from that collection
+        if subcollection:
+            collection_dir = chunks_dir / subcollection
+            if collection_dir.exists() and collection_dir.is_dir():
+                items_dir = collection_dir / "items"
+                if items_dir.exists():
+                    for item_file in items_dir.glob("*.json"):
+                        try:
+                            # Read file content for preview
+                            with open(item_file, 'r') as f:
+                                content = json.load(f)
+                            
+                            # Extract preview content (first 200 chars)
+                            preview = content.get("content", "")[:200] + "..." if len(content.get("content", "")) > 200 else content.get("content", "")
+                            
+                            items.append({
+                                "id": item_file.stem,
+                                "name": content.get("id", item_file.stem),
+                                "preview": preview,
+                                "collection_name": collection_dir.name,
+                                "size": item_file.stat().st_size,
+                                "modified": datetime.fromtimestamp(item_file.stat().st_mtime).isoformat(),
+                                "metadata": content.get("metadata", {}),
+                                "dataset": dataset,
+                                "subcollection": subcollection
+                            })
+                        except Exception as e:
+                            logger.error(f"Error reading chunk file {item_file}: {e}")
+                            continue
+        else:
+            # Get items from all subcollections in the dataset (fallback)
             for collection_dir in chunks_dir.iterdir():
-                if collection_dir.is_dir():
+                if collection_dir.is_dir() and collection_dir.name.startswith(f"{dataset}_"):
                     items_dir = collection_dir / "items"
                     if items_dir.exists():
                         for item_file in items_dir.glob("*.json"):
@@ -280,7 +377,7 @@ async def get_collection_items(collection: str):
                                 with open(item_file, 'r') as f:
                                     content = json.load(f)
                                 
-                                # Extract preview content
+                                # Extract preview content (first 200 chars)
                                 preview = content.get("content", "")[:200] + "..." if len(content.get("content", "")) > 200 else content.get("content", "")
                                 
                                 items.append({
@@ -290,47 +387,28 @@ async def get_collection_items(collection: str):
                                     "collection_name": collection_dir.name,
                                     "size": item_file.stat().st_size,
                                     "modified": datetime.fromtimestamp(item_file.stat().st_mtime).isoformat(),
-                                    "metadata": content.get("metadata", {})
+                                    "metadata": content.get("metadata", {}),
+                                    "dataset": dataset
                                 })
                             except Exception as e:
                                 logger.error(f"Error reading chunk file {item_file}: {e}")
                                 continue
-    
-    elif collection == "prompts":
-        prompts_dir = DATA_DIR / "prompts"
-        if prompts_dir.exists():
-            for method_dir in prompts_dir.iterdir():
-                if method_dir.is_dir():
-                    prompt_file = method_dir / "prompt.json"
-                    if prompt_file.exists():
-                        try:
-                            with open(prompt_file, 'r') as f:
-                                content = json.load(f)
-                            
-                            preview = content.get("template", "")[:200] + "..." if len(content.get("template", "")) > 200 else content.get("template", "")
-                            
-                            items.append({
-                                "id": method_dir.name,
-                                "name": content.get("name", method_dir.name),
-                                "preview": preview,
-                                "collection_name": method_dir.name,
-                                "size": prompt_file.stat().st_size,
-                                "modified": datetime.fromtimestamp(prompt_file.stat().st_mtime).isoformat(),
-                                "parameters": content.get("parameters", {})
-                            })
-                        except Exception as e:
-                            logger.error(f"Error reading prompt file {prompt_file}: {e}")
-                            continue
+    except OSError as e:
+        logger.error(f"Error reading collection items for {dataset}/{subcollection}: {e}")
+        return []
     
     return items
 
-async def get_item_details(collection: str, item_id: str):
+async def get_item_details(dataset: str, item_id: str):
     """Get detailed item data for item detail page."""
-    if collection == "chunks":
-        # Find the chunk file
-        chunks_dir = DATA_DIR / "outputs" / "chunks"
+    # Find the item in any chunk collection that belongs to this dataset
+    chunks_dir = DATA_DIR / "outputs" / "chunks"
+    if not chunks_dir.exists():
+        raise HTTPException(status_code=404, detail="Data directory not found")
+        
+    try:
         for collection_dir in chunks_dir.iterdir():
-            if collection_dir.is_dir():
+            if collection_dir.is_dir() and collection_dir.name.startswith(f"{dataset}_"):
                 items_dir = collection_dir / "items"
                 item_file = items_dir / f"{item_id}.json"
                 if item_file.exists():
@@ -356,6 +434,7 @@ async def get_item_details(collection: str, item_id: str):
                         return {
                             "id": item_id,
                             "name": content.get("id", item_id),
+                            "dataset": dataset,
                             "collection_name": collection_dir.name,
                             "content": content.get("content", ""),
                             "metadata": content.get("metadata", {}),
@@ -366,31 +445,10 @@ async def get_item_details(collection: str, item_id: str):
                         }
                     except Exception as e:
                         logger.error(f"Error reading chunk details {item_file}: {e}")
-                        break
-    
-    elif collection == "prompts":
-        prompts_dir = DATA_DIR / "prompts"
-        method_dir = prompts_dir / item_id
-        prompt_file = method_dir / "prompt.json"
-        
-        if prompt_file.exists():
-            try:
-                with open(prompt_file, 'r') as f:
-                    content = json.load(f)
-                
-                return {
-                    "id": item_id,
-                    "name": content.get("name", item_id),
-                    "collection_name": item_id,
-                    "template": content.get("template", ""),
-                    "parameters": content.get("parameters", {}),
-                    "created": content.get("created", ""),
-                    "full_content": content,
-                    "file_size": prompt_file.stat().st_size,
-                    "modified": datetime.fromtimestamp(prompt_file.stat().st_mtime).isoformat()
-                }
-            except Exception as e:
-                logger.error(f"Error reading prompt details {prompt_file}: {e}")
+                        continue
+    except OSError as e:
+        logger.error(f"Error reading item details for {dataset}/{item_id}: {e}")
+        raise HTTPException(status_code=500, detail="Error accessing data directory")
     
     raise HTTPException(status_code=404, detail="Item not found")
 

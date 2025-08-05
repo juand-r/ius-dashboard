@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ dataset_info.display_name }} - IUS Processing Dashboard</title>
+    <style>
+        /* Copied from detective dashboard - exact styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 20px 0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .breadcrumb {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .breadcrumb a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .main-content {
+            padding: 40px 0;
+        }
+
+        .dataset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 24px;
+            margin-top: 30px;
+        }
+
+        .dataset-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            padding: 24px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .dataset-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px 0 rgba(0, 0, 0, 0.1);
+            border-color: #3b82f6;
+        }
+
+        .dataset-card h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 12px;
+        }
+
+        .dataset-card p {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .dataset-card .stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .dataset-card .item-count {
+            color: #3b82f6;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .dataset-card .approach-type {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .section-subtitle {
+            color: #64748b;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #1e293b;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="breadcrumb">
+                <a href="/">Dashboard</a> > {{ dataset_info.display_name }}
+            </div>
+            <h1>{{ dataset_info.display_name }} Dataset</h1>
+            <p>{{ dataset_info.description }}</p>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <h2 class="section-title">Processing Approaches</h2>
+            <p class="section-subtitle">Different chunking and processing configurations for this dataset</p>
+            
+            {% if subcollections %}
+                <div class="dataset-grid">
+                    {% for subcollection in subcollections %}
+                        <a href="{{ subcollection.path }}" class="dataset-card">
+                            <h3>{{ subcollection.display_name }}</h3>
+                            <p>{{ subcollection.description }}</p>
+                            <div class="stats">
+                                <span class="item-count">{{ subcollection.count }} items</span>
+                                {% if 'fixed_size' in subcollection.name %}
+                                    <span class="approach-type">Fixed Size</span>
+                                {% elif 'fixed_count' in subcollection.name %}
+                                    <span class="approach-type">Fixed Count</span>
+                                {% else %}
+                                    <span class="approach-type">Other</span>
+                                {% endif %}
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <h3>No processing approaches found</h3>
+                    <p>This dataset doesn't have any processed collections yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <script>
+        // Add click handlers for better UX
+        document.querySelectorAll('.dataset-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'A') {
+                    window.location.href = this.href;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

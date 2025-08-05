@@ -180,10 +180,20 @@
     <header class="header">
         <div class="container">
             <div class="header-content">
-                <a href="/" class="back-button">← Back to Collections</a>
+                <a href="/{{ dataset }}" class="back-button">← Back to {{ dataset | upper }}</a>
                 <div>
-                    <h1>{{ collection_info.display_name }}</h1>
-                    <p>{{ collection_info.description }}</p>
+                    {% if subcollection %}
+                        <div style="color: #64748b; font-size: 14px; margin-bottom: 8px;">
+                            <a href="/" style="color: #3b82f6; text-decoration: none;">Dashboard</a> > 
+                            <a href="/{{ dataset }}" style="color: #3b82f6; text-decoration: none;">{{ dataset | upper }}</a> > 
+                            {{ subcollection | replace("_", " ") | title }}
+                        </div>
+                        <h1>{{ subcollection | replace("_", " ") | title }}</h1>
+                        <p>Items processed using this approach</p>
+                    {% else %}
+                        <h1>{{ collection_info.display_name }}</h1>
+                        <p>{{ collection_info.description }}</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -199,7 +209,7 @@
             {% if items %}
             <div class="items-grid" id="items-grid">
                 {% for item in items %}
-                <a href="/{{ collection }}/item/{{ item.id }}" class="item-card">
+                <a href="/{{ dataset }}/{{ subcollection }}/item/{{ item.id }}" class="item-card">
                     <h3>{{ item.name }}</h3>
                     <div class="item-preview">{{ item.preview }}</div>
                     <div class="item-meta">

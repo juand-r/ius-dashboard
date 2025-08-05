@@ -8,7 +8,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Railway app URL - change this to your deployed Railway URL
-RAILWAY_URL = os.getenv("RAILWAY_URL", "http://localhost:8000")
+RAILWAY_URL = os.getenv("RAILWAY_URL", "https://ius-dashboard-production.up.railway.app")
+# RAILWAY_URL = os.getenv("RAILWAY_URL", "http://localhost:8000")  # Uncomment for local testing
 
 # Directories to watch (relative to project root)
 WATCHED_DIRS = [
