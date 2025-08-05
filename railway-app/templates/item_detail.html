@@ -228,6 +228,26 @@
             display: inline-block;
         }
 
+        /* Content Grid for Side-by-Side Layout */
+        .content-grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .content-column {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (max-width: 768px) {
+            .content-grid-2col {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+        }
+
         /* Story Information Styles */
         .story-header-fixed {
             background: white;
@@ -474,35 +494,88 @@
             </div>
             {% endif %}
 
-            <!-- Text Section with Nested Chunks -->
-            <div class="collapsible-section">
-                <div class="section-header" onclick="toggleSection('text-content')">
-                    <div class="section-header-left">
-                        <span class="section-icon">📄</span>
-                        <span class="section-title">Text</span>
-                    </div>
-                    <span class="toggle-icon" id="text-content-icon">▶</span>
-                </div>
-                <div class="section-content collapsed" id="text-content">
-                    {% if item.full_content.documents and item.full_content.documents[0].chunks %}
-                    <!-- Individual Chunk Dropdowns -->
-                    {% for chunk in item.full_content.documents[0].chunks %}
-                    <div class="collapsible-section" style="margin: 12px 0; border: 1px solid #e5e7eb;">
-                        <div class="section-header" onclick="toggleSection('chunk-{{ loop.index }}')">
+            <!-- Content Section: Side-by-Side Text and Summaries -->
+            <div class="content-grid-2col">
+                <!-- Left Column: Text (Chunks) -->
+                <div class="content-column">
+                    <div class="collapsible-section">
+                        <div class="section-header" onclick="toggleSection('text-content')">
                             <div class="section-header-left">
-                                <span class="section-icon">📝</span>
-                                <span class="section-title">Chunk {{ loop.index }}</span>
+                                <span class="section-icon">📄</span>
+                                <span class="section-title">Text</span>
                             </div>
-                            <span class="toggle-icon" id="chunk-{{ loop.index }}-icon">▶</span>
+                            <span class="toggle-icon" id="text-content-icon">▶</span>
                         </div>
-                        <div class="section-content collapsed" id="chunk-{{ loop.index }}">
-                            <div class="content-block">{{ chunk }}</div>
+                        <div class="section-content collapsed" id="text-content">
+                            {% if item.full_content.documents and item.full_content.documents[0].chunks %}
+                            <!-- Individual Chunk Dropdowns -->
+                            {% for chunk in item.full_content.documents[0].chunks %}
+                            <div class="collapsible-section" style="margin: 12px 0; border: 1px solid #e5e7eb;">
+                                <div class="section-header" onclick="toggleSection('chunk-{{ loop.index }}')">
+                                    <div class="section-header-left">
+                                        <span class="section-icon">📝</span>
+                                        <span class="section-title">Chunk {{ loop.index }}</span>
+                                    </div>
+                                    <span class="toggle-icon" id="chunk-{{ loop.index }}-icon">▶</span>
+                                </div>
+                                <div class="section-content collapsed" id="chunk-{{ loop.index }}">
+                                    <div class="content-block">{{ chunk }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <!-- Fallback if no chunks available -->
+                            <div class="content-block">{{ item.content }}</div>
+                            {% endif %}
                         </div>
                     </div>
-                    {% endfor %}
+                </div>
+
+                <!-- Right Column: Summaries -->
+                <div class="content-column">
+                    {% if item.summary_data and item.summary_data.summaries %}
+                    <div class="collapsible-section">
+                        <div class="section-header" onclick="toggleSection('summaries-content')">
+                            <div class="section-header-left">
+                                <span class="section-icon">📋</span>
+                                <span class="section-title">Summaries</span>
+                            </div>
+                            <span class="toggle-icon" id="summaries-content-icon">▶</span>
+                        </div>
+                        <div class="section-content collapsed" id="summaries-content">
+                            <!-- Individual Summary Dropdowns -->
+                            {% for summary in item.summary_data.summaries %}
+                            <div class="collapsible-section" style="margin: 12px 0; border: 1px solid #e5e7eb;">
+                                <div class="section-header" onclick="toggleSection('summary-{{ loop.index }}')">
+                                    <div class="section-header-left">
+                                        <span class="section-icon">📝</span>
+                                        <span class="section-title">Summary {{ loop.index }}{% if loop.index == item.summary_data.summaries|length %} (Complete){% endif %}</span>
+                                    </div>
+                                    <span class="toggle-icon" id="summary-{{ loop.index }}-icon">▶</span>
+                                </div>
+                                <div class="section-content collapsed" id="summary-{{ loop.index }}">
+                                    <div class="content-block">{{ summary }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                     {% else %}
-                    <!-- Fallback if no chunks available -->
-                    <div class="content-block">{{ item.content }}</div>
+                    <!-- No summaries available -->
+                    <div class="collapsible-section" style="opacity: 0.6;">
+                        <div class="section-header">
+                            <div class="section-header-left">
+                                <span class="section-icon">📋</span>
+                                <span class="section-title">Summaries</span>
+                            </div>
+                            <span class="toggle-icon">—</span>
+                        </div>
+                        <div class="section-content">
+                            <div class="content-block" style="font-style: italic; color: #666;">
+                                No summaries available for this item.
+                            </div>
+                        </div>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -525,19 +598,7 @@
             </div>
             {% endif %}
 
-            <!-- Full Data Section -->
-            <div class="collapsible-section">
-                <div class="section-header" onclick="toggleSection('full-data')">
-                    <div class="section-header-left">
-                        <span class="section-icon">🔍</span>
-                        <span class="section-title">Full Data</span>
-                    </div>
-                    <span class="toggle-icon" id="full-data-icon">▶</span>
-                </div>
-                <div class="section-content collapsed" id="full-data">
-                    <div class="json-content">{{ item.full_content | tojson(indent=2) }}</div>
-                </div>
-            </div>
+
         </div>
     </main>
 

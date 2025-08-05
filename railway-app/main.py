@@ -62,6 +62,23 @@ async def clear_data():
         logger.error(f"Error clearing data: {e}")
         return {"status": "error", "message": str(e)}
 
+@app.get("/debug/{dataset}/{subcollection}/item/{item_id}")
+async def debug_item(dataset: str, subcollection: str, item_id: str):
+    """Debug endpoint to check summary data."""
+    try:
+        item_data = await get_item_details(dataset, subcollection, item_id)
+        summary_info = {
+            "has_summary_data": item_data.get("summary_data") is not None,
+            "num_summaries": len(item_data.get("summary_data", {}).get("summaries", [])) if item_data.get("summary_data") else 0,
+            "collection_name": item_data.get("summary_data", {}).get("collection_name", "None") if item_data.get("summary_data") else "None"
+        }
+        if item_data.get("summary_data"):
+            for i, summary in enumerate(item_data["summary_data"]["summaries"]):
+                summary_info[f"summary_{i+1}_length"] = len(summary)
+                summary_info[f"summary_{i+1}_preview"] = summary[:100] + "..."
+        return summary_info
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.post("/upload")
 async def upload_file(
@@ -490,6 +507,53 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                 "publication_year": pub_year
             }
         
+        # Try to load summary data
+        summary_data = None
+        summaries_dir = DATA_DIR / "outputs" / "summaries"
+        if summaries_dir.exists():
+            # Look for summary collections that match this subcollection pattern
+            # Prioritize "all" collections with "intermediate" summaries for progressive summaries
+            # e.g., bmds_fixed_size_8000_all_iterative_incremental_intermediate
+            summary_collections = []
+            for summary_collection in summaries_dir.iterdir():
+                if (summary_collection.is_dir() and 
+                    subcollection in summary_collection.name and 
+                    "iterative" in summary_collection.name):
+                    summary_collections.append(summary_collection)
+            
+            # Sort to prioritize "all" and "intermediate" collections
+            summary_collections.sort(key=lambda x: (
+                "all" not in x.name,  # "all" collections first
+                "intermediate" not in x.name  # "intermediate" collections first
+            ))
+            
+            for summary_collection in summary_collections:
+                    
+                    summary_items_dir = summary_collection / "items"
+                    summary_file = summary_items_dir / f"{item_id}.json"
+                    
+                    if summary_file.exists():
+                        try:
+                            with open(summary_file, 'r') as f:
+                                summary_content = json.load(f)
+                            
+                            # Extract summaries array
+                            doc_summaries = summary_content.get("documents", [{}])[0] if summary_content.get("documents") else {}
+                            summaries_list = doc_summaries.get("summaries", [])
+                            
+                            summary_data = {
+                                "collection_name": summary_collection.name,
+                                "summaries": summaries_list,
+                                "num_summaries": len(summaries_list)
+                            }
+                            logger.info(f"Loaded {len(summaries_list)} summaries for {item_id} from {summary_collection.name}")
+                            for i, summary in enumerate(summaries_list):
+                                logger.info(f"Summary {i+1} length: {len(summary)} chars, starts with: {summary[:50]}...")
+                            break  # Use first matching summary collection
+                        except Exception as e:
+                            logger.error(f"Error reading summary file {summary_file}: {e}")
+                            continue
+
         return {
             "id": item_id,
             "name": content.get("id", item_id),
@@ -500,6 +564,7 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
             "crimes_metadata": crimes_metadata,
             "story_info": story_info if dataset == "bmds" else {},
             "full_content": content,
+            "summary_data": summary_data,  # New field for summaries
             "file_size": item_file.stat().st_size,
             "modified": datetime.fromtimestamp(item_file.stat().st_mtime).isoformat()
         }
