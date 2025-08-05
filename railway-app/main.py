@@ -234,7 +234,7 @@ async def item_detail(request: Request, dataset: str, subcollection: str, item_i
     """
     Item detail page with collapsible sections (like detective story detail).
     """
-    item_data = await get_item_details(dataset, item_id)
+    item_data = await get_item_details(dataset, subcollection, item_id)
     
     return templates.TemplateResponse("item_detail.html", {
         "request": request,
@@ -399,115 +399,114 @@ async def get_collection_items(dataset: str, subcollection: str = None):
     
     return items
 
-async def get_item_details(dataset: str, item_id: str):
+async def get_item_details(dataset: str, subcollection: str, item_id: str):
     """Get detailed item data for item detail page."""
-    # Find the item in any chunk collection that belongs to this dataset
+    # Find the item in the specific subcollection
     chunks_dir = DATA_DIR / "outputs" / "chunks"
     if not chunks_dir.exists():
         raise HTTPException(status_code=404, detail="Data directory not found")
         
-    try:
-        for collection_dir in chunks_dir.iterdir():
-            if collection_dir.is_dir() and collection_dir.name.startswith(f"{dataset}_"):
-                items_dir = collection_dir / "items"
-                item_file = items_dir / f"{item_id}.json"
-                if item_file.exists():
-                    try:
-                        with open(item_file, 'r') as f:
-                            content = json.load(f)
-                        
-
-                        
-                        # Extract chunk metadata (universal for all datasets)  
-                        item_meta = content.get("item_metadata", {})
-                        doc_metadata = content.get("documents", [{}])[0].get("metadata", {}) if content.get("documents") else {}
-                        chunk_metadata = {
-                            "chunking_method": item_meta.get("chunking_method", "unknown"),
-                            "chunking_timestamp": item_meta.get("chunking_timestamp", ""),
-                            "chunking_params": item_meta.get("chunking_params", {}),
-                            "chunking_stats": doc_metadata.get("chunking_stats", {})
-                        }
-                        
-                        # Extract crimes/clues metadata (BMDS-specific)
-                        crimes_metadata = {}
-                        if dataset == "bmds":
-                            doc_meta = content.get("documents", [{}])[0].get("metadata", {}).get("original_metadata", {}).get("original_metadata", {}) if content.get("documents") else {}
-                            story_annotations = doc_meta.get("story_annotations", {})
-                            
-                            # Extract victim/culprit counts with assertion
-                            victims_male = int(story_annotations.get("Number of victims of gender Male", 0))
-                            victims_female = int(story_annotations.get("Number of victims of gender Female", 0))
-                            victims_unknown = int(story_annotations.get("Number of victims of gender Unknown", 0))
-                            victims_nonbinary = int(story_annotations.get("Number of victims of gender Non-binary", 0))
-                            
-                            culprits_male = int(story_annotations.get("Number of culprits of gender Male", 0))
-                            culprits_female = int(story_annotations.get("Number of culprits of gender Female", 0))
-                            culprits_unknown = int(story_annotations.get("Number of culprits of gender Unknown", 0))
-                            culprits_nonbinary = int(story_annotations.get("Number of culprits of gender Non-binary", 0))
-                            
-                            # Include unknown/non-binary in totals if they exist
-                            
-                            # Extract author information
-                            author_meta = doc_meta.get("author_metadata", {})
-                            given_names = author_meta.get("Given Name(s)", "")
-                            surname = author_meta.get("Surname(s)", "")
-                            author_name = f"{given_names} {surname}".strip() if given_names or surname else ""
-                            
-                            # Extract publication year
-                            pub_date = story_annotations.get("Date of First Publication (YYYY-MM-DD)", "")
-                            pub_year = ""
-                            if pub_date and len(pub_date) >= 4:
-                                pub_year = f"({pub_date[:4]})"
-                            
-                            crimes_metadata = {
-                                "victims_male": victims_male,
-                                "victims_female": victims_female,
-                                "victims_unknown": victims_unknown,
-                                "victims_nonbinary": victims_nonbinary,
-                                "culprits_male": culprits_male,
-                                "culprits_female": culprits_female,
-                                "culprits_unknown": culprits_unknown,
-                                "culprits_nonbinary": culprits_nonbinary,
-                                "types_of_qrimes": story_annotations.get("Types of qrimes", "") or "None",
-                                "crime_trajectory": story_annotations.get("Crime trajectory", "") or "None",
-                                "motives": story_annotations.get("Motives", "") or "None",
-                                "means_murder": story_annotations.get("Means (murder only)", "") or "None",
-                                "essential_clue": story_annotations.get("Essential clue", "") or "None",
-                                "most_salient_clue": story_annotations.get("Most salient clue", "") or "None",
-                                "correct_annotator_guess": story_annotations.get("Correct annotator guess?", "") or "None",
-                                "recommend_to_friend": story_annotations.get("Recommend to friend?", "") or "None",
-                                "planted_evidence": story_annotations.get("Presence of planted or fabricated evidence", "") or "None"
-                            }
-                            
-                            # Extract story information
-                            story_info = {
-                                "title": story_annotations.get("Story Title", ""),
-                                "plot_summary": story_annotations.get("Plot Summary", ""),
-                                "author": author_name,
-                                "publication_year": pub_year
-                            }
-                        
-                        return {
-                            "id": item_id,
-                            "name": content.get("id", item_id),
-                            "dataset": dataset,
-                            "collection_name": collection_dir.name,
-                            "content": content.get("content", ""),
-                            "chunk_metadata": chunk_metadata,
-                            "crimes_metadata": crimes_metadata,
-                            "story_info": story_info if dataset == "bmds" else {},
-                            "full_content": content,
-                            "file_size": item_file.stat().st_size,
-                            "modified": datetime.fromtimestamp(item_file.stat().st_mtime).isoformat()
-                        }
-                    except Exception as e:
-                        logger.error(f"Error reading chunk details {item_file}: {e}")
-                        continue
-    except OSError as e:
-        logger.error(f"Error reading item details for {dataset}/{item_id}: {e}")
-        raise HTTPException(status_code=500, detail="Error accessing data directory")
+    # Look specifically in the requested subcollection
+    collection_dir = chunks_dir / subcollection
+    if not collection_dir.exists() or not collection_dir.is_dir():
+        raise HTTPException(status_code=404, detail=f"Collection {subcollection} not found")
+        
+    items_dir = collection_dir / "items"
+    item_file = items_dir / f"{item_id}.json"
     
-    raise HTTPException(status_code=404, detail="Item not found")
+    if not item_file.exists():
+        raise HTTPException(status_code=404, detail=f"Item {item_id} not found in {subcollection}")
+        
+    try:
+        with open(item_file, 'r') as f:
+            content = json.load(f)
+        
+        # Extract chunk metadata (universal for all datasets)  
+        item_meta = content.get("item_metadata", {})
+        doc_metadata = content.get("documents", [{}])[0].get("metadata", {}) if content.get("documents") else {}
+        chunk_metadata = {
+            "chunking_method": item_meta.get("chunking_method", "unknown"),
+            "chunking_timestamp": item_meta.get("chunking_timestamp", ""),
+            "chunking_params": item_meta.get("chunking_params", {}),
+            "chunking_stats": doc_metadata.get("chunking_stats", {})
+        }
+        
+        # Extract crimes/clues metadata (BMDS-specific)
+        crimes_metadata = {}
+        if dataset == "bmds":
+            doc_meta = content.get("documents", [{}])[0].get("metadata", {}).get("original_metadata", {}).get("original_metadata", {}) if content.get("documents") else {}
+            story_annotations = doc_meta.get("story_annotations", {})
+            
+            # Extract victim/culprit counts with assertion
+            victims_male = int(story_annotations.get("Number of victims of gender Male", 0))
+            victims_female = int(story_annotations.get("Number of victims of gender Female", 0))
+            victims_unknown = int(story_annotations.get("Number of victims of gender Unknown", 0))
+            victims_nonbinary = int(story_annotations.get("Number of victims of gender Non-binary", 0))
+            
+            culprits_male = int(story_annotations.get("Number of culprits of gender Male", 0))
+            culprits_female = int(story_annotations.get("Number of culprits of gender Female", 0))
+            culprits_unknown = int(story_annotations.get("Number of culprits of gender Unknown", 0))
+            culprits_nonbinary = int(story_annotations.get("Number of culprits of gender Non-binary", 0))
+            
+            # Include unknown/non-binary in totals if they exist
+            
+            # Extract author information
+            author_meta = doc_meta.get("author_metadata", {})
+            given_names = author_meta.get("Given Name(s)", "")
+            surname = author_meta.get("Surname(s)", "")
+            author_name = f"{given_names} {surname}".strip() if given_names or surname else ""
+            
+            # Extract publication year
+            pub_date = story_annotations.get("Date of First Publication (YYYY-MM-DD)", "")
+            pub_year = ""
+            if pub_date and len(pub_date) >= 4:
+                pub_year = f"({pub_date[:4]})"
+            
+            crimes_metadata = {
+                "victims_male": victims_male,
+                "victims_female": victims_female,
+                "victims_unknown": victims_unknown,
+                "victims_nonbinary": victims_nonbinary,
+                "culprits_male": culprits_male,
+                "culprits_female": culprits_female,
+                "culprits_unknown": culprits_unknown,
+                "culprits_nonbinary": culprits_nonbinary,
+                "types_of_qrimes": story_annotations.get("Types of qrimes", "") or "None",
+                "crime_trajectory": story_annotations.get("Crime trajectory", "") or "None",
+                "motives": story_annotations.get("Motives", "") or "None",
+                "means_murder": story_annotations.get("Means (murder only)", "") or "None",
+                "essential_clue": story_annotations.get("Essential clue", "") or "None",
+                "most_salient_clue": story_annotations.get("Most salient clue", "") or "None",
+                "correct_annotator_guess": story_annotations.get("Correct annotator guess?", "") or "None",
+                "recommend_to_friend": story_annotations.get("Recommend to friend?", "") or "None",
+                "planted_evidence": story_annotations.get("Presence of planted or fabricated evidence", "") or "None"
+            }
+            
+            # Extract story information
+            story_info = {
+                "title": story_annotations.get("Story Title", ""),
+                "plot_summary": story_annotations.get("Plot Summary", ""),
+                "author": author_name,
+                "publication_year": pub_year
+            }
+        
+        return {
+            "id": item_id,
+            "name": content.get("id", item_id),
+            "dataset": dataset,
+            "collection_name": collection_dir.name,
+            "content": content.get("content", ""),
+            "chunk_metadata": chunk_metadata,
+            "crimes_metadata": crimes_metadata,
+            "story_info": story_info if dataset == "bmds" else {},
+            "full_content": content,
+            "file_size": item_file.stat().st_size,
+            "modified": datetime.fromtimestamp(item_file.stat().st_mtime).isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error reading chunk details {item_file}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error processing item {item_id}: {e}")
 
 def build_file_tree(root_path: Path) -> Dict[str, Any]:
     """
