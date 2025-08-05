@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ item.name }} - IUS Dashboard</title>
+    <style>
+        /* Copied from detective dashboard - exact styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 20px 0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .back-button {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .back-button:hover {
+            background-color: #f1f5f9;
+            border-color: #3b82f6;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .breadcrumb {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .main-content {
+            padding: 40px 0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .control-button {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .control-button:hover {
+            background-color: #f1f5f9;
+            border-color: #3b82f6;
+        }
+
+        .collapsible-section {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 20px 24px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+
+        .section-header:hover {
+            background: #f1f5f9;
+        }
+
+        .section-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-icon {
+            font-size: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .toggle-icon {
+            font-size: 16px;
+            color: #64748b;
+            transition: transform 0.2s ease;
+        }
+
+        .section-content {
+            padding: 24px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .section-content.collapsed {
+            display: none;
+        }
+
+        .section-content.expanded {
+            display: block;
+        }
+
+        .toggle-icon.expanded {
+            transform: rotate(90deg);
+        }
+
+        .content-block {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .json-content {
+            background: #1e293b;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto;
+            margin-bottom: 16px;
+        }
+
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .metadata-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .metadata-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .metadata-value {
+            font-size: 14px;
+            color: #1e293b;
+            word-break: break-word;
+        }
+
+        .chunk-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .chunk-header {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 12px;
+        }
+
+        .chunk-content {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #475569;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/{{ collection }}" class="back-button">← Back to {{ collection.title() }}</a>
+                <div>
+                    <h1>{{ item.name }}</h1>
+                </div>
+            </div>
+            <div class="breadcrumb">
+                <a href="/">Home</a> › 
+                <a href="/{{ collection }}">{{ collection.title() }}</a> › 
+                {{ item.name }}
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="controls">
+                <button class="control-button" onclick="expandAll()">Expand All</button>
+                <button class="control-button" onclick="collapseAll()">Collapse All</button>
+            </div>
+
+            <!-- Main Content Section -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection('main-content')">
+                    <div class="section-header-left">
+                        <span class="section-icon">📄</span>
+                        <span class="section-title">
+                            {% if collection == 'chunks' %}Document Content{% else %}Template Content{% endif %}
+                        </span>
+                    </div>
+                    <span class="toggle-icon expanded" id="main-content-icon">▶</span>
+                </div>
+                <div class="section-content expanded" id="main-content">
+                    {% if collection == 'chunks' %}
+                        <div class="content-block">{{ item.content }}</div>
+                    {% else %}
+                        <div class="content-block">{{ item.template }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if collection == 'chunks' and item.related_chunks %}
+            <!-- Related Chunks Section -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection('related-chunks')">
+                    <div class="section-header-left">
+                        <span class="section-icon">🧩</span>
+                        <span class="section-title">Related Chunks</span>
+                    </div>
+                    <span class="toggle-icon" id="related-chunks-icon">▶</span>
+                </div>
+                <div class="section-content collapsed" id="related-chunks">
+                    {% for chunk in item.related_chunks %}
+                    <div class="chunk-item">
+                        <div class="chunk-header">{{ chunk.id }}</div>
+                        <div class="chunk-content">{{ chunk.content }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if collection == 'prompts' and item.parameters %}
+            <!-- Parameters Section -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection('parameters')">
+                    <div class="section-header-left">
+                        <span class="section-icon">⚙️</span>
+                        <span class="section-title">Parameters</span>
+                    </div>
+                    <span class="toggle-icon" id="parameters-icon">▶</span>
+                </div>
+                <div class="section-content collapsed" id="parameters">
+                    <div class="json-content">{{ item.parameters | tojson(indent=2) }}</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Full Data Section -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection('full-data')">
+                    <div class="section-header-left">
+                        <span class="section-icon">🔍</span>
+                        <span class="section-title">Full Data</span>
+                    </div>
+                    <span class="toggle-icon" id="full-data-icon">▶</span>
+                </div>
+                <div class="section-content collapsed" id="full-data">
+                    <div class="json-content">{{ item.full_content | tojson(indent=2) }}</div>
+                </div>
+            </div>
+
+            <!-- Metadata Section -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection('metadata')">
+                    <div class="section-header-left">
+                        <span class="section-icon">📊</span>
+                        <span class="section-title">Metadata</span>
+                    </div>
+                    <span class="toggle-icon" id="metadata-icon">▶</span>
+                </div>
+                <div class="section-content collapsed" id="metadata">
+                    <div class="metadata-grid">
+                        <div class="metadata-item">
+                            <div class="metadata-label">File Size</div>
+                            <div class="metadata-value">{{ (item.file_size / 1024) | round(1) }} KB</div>
+                        </div>
+                        <div class="metadata-item">
+                            <div class="metadata-label">Last Modified</div>
+                            <div class="metadata-value">{{ item.modified[:19] | replace('T', ' ') }}</div>
+                        </div>
+                        <div class="metadata-item">
+                            <div class="metadata-label">Collection</div>
+                            <div class="metadata-value">{{ item.collection_name }}</div>
+                        </div>
+                        <div class="metadata-item">
+                            <div class="metadata-label">Item ID</div>
+                            <div class="metadata-value">{{ item.id }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function toggleSection(sectionId) {
+            const content = document.getElementById(sectionId);
+            const icon = document.getElementById(sectionId + '-icon');
+            
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                content.classList.add('expanded');
+                icon.classList.add('expanded');
+                icon.textContent = '▼';
+            } else {
+                content.classList.remove('expanded');
+                content.classList.add('collapsed');
+                icon.classList.remove('expanded');
+                icon.textContent = '▶';
+            }
+        }
+
+        function expandAll() {
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.classList.remove('collapsed');
+                section.classList.add('expanded');
+            });
+            document.querySelectorAll('.toggle-icon').forEach(icon => {
+                icon.classList.add('expanded');
+                icon.textContent = '▼';
+            });
+        }
+
+        function collapseAll() {
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.classList.remove('expanded');  
+                section.classList.add('collapsed');
+            });
+            document.querySelectorAll('.toggle-icon').forEach(icon => {
+                icon.classList.remove('expanded');
+                icon.textContent = '▶';
+            });
+        }
+    </script>
+</body>
+</html>

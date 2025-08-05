@@ -58,4 +58,30 @@ Local Files → File Watcher → HTTP Upload → Railway Dashboard → Web UI
 - **railway-app/**: Web dashboard hosted on Railway
 - **data/**: Storage location for uploaded files (Railway volume)
 
+## Detective-Style Dashboard (New Interface)
+
+The dashboard now features a modern, detective-style interface with 3-level navigation matching the detective dashboard design.
+
+### Start Detective Dashboard
+```bash
+source ~/Projects/ius/venv/bin/activate && cd ~/Projects/ius-dashboard/railway-app && uvicorn main:app --reload --port 8000
+```
+
+### Start File Watcher (Optional)
+```bash
+source ~/Projects/ius/venv/bin/activate && cd ~/Projects/ius-dashboard/watcher && python main.py
+```
+
+### Access Your Dashboard
+- **New Interface**: http://localhost:8000 (Detective-style with collection tiles)
+- **Legacy Interface**: http://localhost:8000/legacy (Original dashboard)
+
+### Key Features
+- **Landing Page**: Collection tiles for "Text Chunks" and "Prompts & Templates"
+- **Collection Pages**: Item lists with search functionality  
+- **Item Detail Pages**: Collapsible sections for content, metadata, and related files
+- **Professional Design**: Matches detective dashboard aesthetic exactly
+
+---
+
 See `watch-server-plan.md` for detailed architecture and implementation plan.

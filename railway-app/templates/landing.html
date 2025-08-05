@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IUS Processing Dashboard</title>
+    <style>
+        /* Copied from detective dashboard - exact styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 20px 0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .main-content {
+            padding: 40px 0;
+        }
+
+        .datasets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .dataset-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 32px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .dataset-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .dataset-card h2 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 12px;
+        }
+
+        .dataset-card p {
+            color: #64748b;
+            font-size: 16px;
+            margin-bottom: 16px;
+        }
+
+        .dataset-stats {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .stat-number {
+            font-weight: 600;
+            color: #3b82f6;
+        }
+
+        .footer {
+            margin-top: 60px;
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>IUS Processing Dashboard</h1>
+            <p>Incremental summarization experiments!</p>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="datasets-grid">
+                {% for collection in collections %}
+                <a href="{{ collection.path }}" class="dataset-card">
+                    <h2>{{ collection.display_name }}</h2>
+                    <p>{{ collection.description }}</p>
+                    <div class="dataset-stats">
+                        <div class="stat">
+                            <span class="stat-number">{{ collection.count }}</span>
+                            <span>items</span>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>IUS Processing Dashboard • Automated file monitoring and analysis</p>
+        </div>
+    </footer>
+</body>
+</html>

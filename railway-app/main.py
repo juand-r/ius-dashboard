@@ -174,12 +174,225 @@ async def delete_file(path: str):
 
 
 @app.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request):
+async def landing_page(request: Request):
     """
-    Serve the main dashboard interface.
+    Landing page showing available collections (like detective dashboard).
+    """
+    collections = await get_collections()
+    return templates.TemplateResponse("landing.html", {
+        "request": request,
+        "collections": collections
+    })
+
+@app.get("/{collection}", response_class=HTMLResponse)
+async def collection_page(request: Request, collection: str):
+    """
+    Collection page showing items (like detective stories list).
+    """
+    items = await get_collection_items(collection)
+    collection_info = await get_collection_info(collection)
+    
+    return templates.TemplateResponse("collection.html", {
+        "request": request,
+        "collection": collection,
+        "collection_info": collection_info,
+        "items": items
+    })
+
+@app.get("/{collection}/item/{item_id}", response_class=HTMLResponse)
+async def item_detail(request: Request, collection: str, item_id: str):
+    """
+    Item detail page with collapsible sections (like detective story detail).
+    """
+    item_data = await get_item_details(collection, item_id)
+    
+    return templates.TemplateResponse("item_detail.html", {
+        "request": request,
+        "collection": collection,
+        "item": item_data
+    })
+
+@app.get("/legacy", response_class=HTMLResponse)
+async def legacy_dashboard(request: Request):
+    """
+    Legacy dashboard interface (keep for compatibility).
     """
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
+
+async def get_collections():
+    """Get available collections for landing page."""
+    collections = []
+    
+    if (DATA_DIR / "outputs" / "chunks").exists():
+        chunk_count = sum(1 for _ in (DATA_DIR / "outputs" / "chunks").rglob("*.json"))
+        collections.append({
+            "name": "chunks",
+            "display_name": "Text Chunks",
+            "description": "Processed document segments and analysis",
+            "count": chunk_count,
+            "path": "/chunks"
+        })
+    
+    if (DATA_DIR / "prompts").exists():
+        prompt_count = sum(1 for _ in (DATA_DIR / "prompts").rglob("*.json"))
+        collections.append({
+            "name": "prompts", 
+            "display_name": "Prompts & Templates",
+            "description": "Processing instructions and methods",
+            "count": prompt_count,
+            "path": "/prompts"
+        })
+    
+    return collections
+
+async def get_collection_info(collection: str):
+    """Get collection metadata."""
+    if collection == "chunks":
+        return {
+            "name": "chunks",
+            "display_name": "Text Chunks",
+            "description": "Processed document segments and analysis"
+        }
+    elif collection == "prompts":
+        return {
+            "name": "prompts",
+            "display_name": "Prompts & Templates", 
+            "description": "Processing instructions and methods"
+        }
+    else:
+        return {"name": collection, "display_name": collection.title(), "description": ""}
+
+async def get_collection_items(collection: str):
+    """Get items in a collection (like detective stories)."""
+    items = []
+    
+    if collection == "chunks":
+        chunks_dir = DATA_DIR / "outputs" / "chunks"
+        if chunks_dir.exists():
+            for collection_dir in chunks_dir.iterdir():
+                if collection_dir.is_dir():
+                    items_dir = collection_dir / "items"
+                    if items_dir.exists():
+                        for item_file in items_dir.glob("*.json"):
+                            try:
+                                # Read file content for preview
+                                with open(item_file, 'r') as f:
+                                    content = json.load(f)
+                                
+                                # Extract preview content
+                                preview = content.get("content", "")[:200] + "..." if len(content.get("content", "")) > 200 else content.get("content", "")
+                                
+                                items.append({
+                                    "id": item_file.stem,
+                                    "name": content.get("id", item_file.stem),
+                                    "preview": preview,
+                                    "collection_name": collection_dir.name,
+                                    "size": item_file.stat().st_size,
+                                    "modified": datetime.fromtimestamp(item_file.stat().st_mtime).isoformat(),
+                                    "metadata": content.get("metadata", {})
+                                })
+                            except Exception as e:
+                                logger.error(f"Error reading chunk file {item_file}: {e}")
+                                continue
+    
+    elif collection == "prompts":
+        prompts_dir = DATA_DIR / "prompts"
+        if prompts_dir.exists():
+            for method_dir in prompts_dir.iterdir():
+                if method_dir.is_dir():
+                    prompt_file = method_dir / "prompt.json"
+                    if prompt_file.exists():
+                        try:
+                            with open(prompt_file, 'r') as f:
+                                content = json.load(f)
+                            
+                            preview = content.get("template", "")[:200] + "..." if len(content.get("template", "")) > 200 else content.get("template", "")
+                            
+                            items.append({
+                                "id": method_dir.name,
+                                "name": content.get("name", method_dir.name),
+                                "preview": preview,
+                                "collection_name": method_dir.name,
+                                "size": prompt_file.stat().st_size,
+                                "modified": datetime.fromtimestamp(prompt_file.stat().st_mtime).isoformat(),
+                                "parameters": content.get("parameters", {})
+                            })
+                        except Exception as e:
+                            logger.error(f"Error reading prompt file {prompt_file}: {e}")
+                            continue
+    
+    return items
+
+async def get_item_details(collection: str, item_id: str):
+    """Get detailed item data for item detail page."""
+    if collection == "chunks":
+        # Find the chunk file
+        chunks_dir = DATA_DIR / "outputs" / "chunks"
+        for collection_dir in chunks_dir.iterdir():
+            if collection_dir.is_dir():
+                items_dir = collection_dir / "items"
+                item_file = items_dir / f"{item_id}.json"
+                if item_file.exists():
+                    try:
+                        with open(item_file, 'r') as f:
+                            content = json.load(f)
+                        
+                        # Look for related chunks in the same collection
+                        related_chunks = []
+                        for related_file in items_dir.glob("*.json"):
+                            if related_file.stem != item_id:
+                                try:
+                                    with open(related_file, 'r') as f:
+                                        related_content = json.load(f)
+                                    related_chunks.append({
+                                        "id": related_content.get("id", related_file.stem),
+                                        "content": related_content.get("content", ""),
+                                        "metadata": related_content.get("metadata", {})
+                                    })
+                                except Exception:
+                                    continue
+                        
+                        return {
+                            "id": item_id,
+                            "name": content.get("id", item_id),
+                            "collection_name": collection_dir.name,
+                            "content": content.get("content", ""),
+                            "metadata": content.get("metadata", {}),
+                            "related_chunks": related_chunks,
+                            "full_content": content,
+                            "file_size": item_file.stat().st_size,
+                            "modified": datetime.fromtimestamp(item_file.stat().st_mtime).isoformat()
+                        }
+                    except Exception as e:
+                        logger.error(f"Error reading chunk details {item_file}: {e}")
+                        break
+    
+    elif collection == "prompts":
+        prompts_dir = DATA_DIR / "prompts"
+        method_dir = prompts_dir / item_id
+        prompt_file = method_dir / "prompt.json"
+        
+        if prompt_file.exists():
+            try:
+                with open(prompt_file, 'r') as f:
+                    content = json.load(f)
+                
+                return {
+                    "id": item_id,
+                    "name": content.get("name", item_id),
+                    "collection_name": item_id,
+                    "template": content.get("template", ""),
+                    "parameters": content.get("parameters", {}),
+                    "created": content.get("created", ""),
+                    "full_content": content,
+                    "file_size": prompt_file.stat().st_size,
+                    "modified": datetime.fromtimestamp(prompt_file.stat().st_mtime).isoformat()
+                }
+            except Exception as e:
+                logger.error(f"Error reading prompt details {prompt_file}: {e}")
+    
+    raise HTTPException(status_code=404, detail="Item not found")
 
 def build_file_tree(root_path: Path) -> Dict[str, Any]:
     """
