@@ -2,7 +2,7 @@
 File Watcher Service
 
 Monitors specified directories for file changes and automatically uploads
-files to the Railway dashboard app.
+files to target dashboard(s).
 """
 
 import os
@@ -10,16 +10,17 @@ import sys
 import time
 import logging
 import threading
+import argparse
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, Set
+from typing import Dict, Set, List
 
 import requests
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, FileModifiedEvent, FileCreatedEvent
 
 from config import (
-    RAILWAY_URL, WATCHED_DIRS, DEBOUNCE_SECONDS, PROJECT_ROOT,
+    get_target_urls, WATCHED_DIRS, DEBOUNCE_SECONDS, PROJECT_ROOT,
     WATCH_PATTERNS, IGNORE_PATTERNS, MAX_FILE_SIZE, LOG_LEVEL
 )
 
@@ -29,6 +30,8 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
 
 
 class DebounceHandler:
@@ -56,10 +59,11 @@ class DebounceHandler:
 
 
 class FileUploadHandler(FileSystemEventHandler):
-    """Handles file system events and uploads files to Railway."""
+    """Handles file system events and uploads files to target dashboard(s)."""
     
-    def __init__(self):
+    def __init__(self, target_urls: List[str]):
         super().__init__()
+        self.target_urls = target_urls
         self.debouncer = DebounceHandler(self.upload_file, DEBOUNCE_SECONDS)
         self.processed_files: Set[str] = set()
     
@@ -148,18 +152,18 @@ class FileUploadHandler(FileSystemEventHandler):
         # Default to directory name
         return path_parts[-2] if len(path_parts) > 1 else "unknown"
     
-    def upload_file(self, filepath: str):
-        """Upload file to Railway dashboard."""
+    def upload_file_to_target(self, filepath: str, target_url: str):
+        """Upload file to a specific target."""
         try:
             path_obj = Path(filepath)
             if not path_obj.exists():
                 logger.warning(f"File no longer exists, skipping upload: {filepath}")
-                return
+                return False
             
             relative_path = self.get_relative_path(filepath)
             collection = self.detect_collection(relative_path)
             
-            logger.info(f"Uploading file: {relative_path} (collection: {collection})")
+            logger.info(f"Uploading file to {target_url}: {relative_path} (collection: {collection})")
             
             # Prepare upload data
             upload_data = {
@@ -172,51 +176,75 @@ class FileUploadHandler(FileSystemEventHandler):
             with open(filepath, 'rb') as file:
                 files = {'file': file}
                 response = requests.post(
-                    f"{RAILWAY_URL}/upload",
+                    f"{target_url}/upload",
                     files=files,
                     data=upload_data,
                     timeout=30
                 )
                 
                 if response.status_code == 200:
-                    logger.info(f"Successfully uploaded: {relative_path}")
-                    self.processed_files.add(filepath)
+                    logger.info(f"Successfully uploaded to {target_url}: {relative_path}")
+                    return True
                 else:
-                    logger.error(f"Upload failed for {relative_path}: {response.status_code} - {response.text}")
+                    logger.error(f"Upload failed to {target_url} for {relative_path}: {response.status_code} - {response.text}")
+                    return False
                     
         except Exception as e:
-            logger.error(f"Error uploading {filepath}: {str(e)}")
+            logger.error(f"Error uploading {filepath} to {target_url}: {str(e)}")
+            return False
+
+    def upload_file(self, filepath: str):
+        """Upload file to all target dashboards."""
+        success_count = 0
+        for target_url in self.target_urls:
+            if self.upload_file_to_target(filepath, target_url):
+                success_count += 1
+        
+        if success_count == len(self.target_urls):
+            self.processed_files.add(filepath)
+            logger.info(f"Successfully uploaded to all targets: {filepath}")
+        else:
+            logger.error(f"Failed to upload to some targets: {filepath} ({success_count}/{len(self.target_urls)} succeeded)")
     
     def delete_file(self, filepath: str):
-        """Delete file from Railway dashboard."""
-        try:
-            relative_path = self.get_relative_path(filepath)
-            
-            logger.info(f"Deleting file from dashboard: {relative_path}")
-            
-            # Send DELETE request to dashboard
-            response = requests.delete(
-                f"{RAILWAY_URL}/api/files/{relative_path}",
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                logger.info(f"Successfully deleted from dashboard: {relative_path}")
-                # Remove from processed files set if it was there
-                self.processed_files.discard(filepath)
-            elif response.status_code == 404:
-                logger.info(f"File not found in dashboard (already deleted): {relative_path}")
-            else:
-                logger.error(f"Delete failed for {relative_path}: {response.status_code} - {response.text}")
+        """Delete file from all target dashboards."""
+        relative_path = self.get_relative_path(filepath)
+        success_count = 0
+        
+        for target_url in self.target_urls:
+            try:
+                logger.info(f"Deleting file from {target_url}: {relative_path}")
                 
-        except Exception as e:
-            logger.error(f"Error deleting {filepath}: {str(e)}")
+                # Send DELETE request to dashboard
+                response = requests.delete(
+                    f"{target_url}/api/files/{relative_path}",
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    logger.info(f"Successfully deleted from {target_url}: {relative_path}")
+                    success_count += 1
+                elif response.status_code == 404:
+                    logger.info(f"File not found in {target_url} (already deleted): {relative_path}")
+                    success_count += 1  # Count 404 as success
+                else:
+                    logger.error(f"Delete failed from {target_url} for {relative_path}: {response.status_code} - {response.text}")
+                    
+            except Exception as e:
+                logger.error(f"Error deleting {filepath} from {target_url}: {str(e)}")
+        
+        if success_count == len(self.target_urls):
+            # Remove from processed files set if it was there
+            self.processed_files.discard(filepath)
+            logger.info(f"Successfully deleted from all targets: {filepath}")
+        else:
+            logger.error(f"Failed to delete from some targets: {filepath} ({success_count}/{len(self.target_urls)} succeeded)")
 
 
-def setup_watchers() -> Observer:
+def setup_watchers(target_urls: List[str]) -> Observer:
     """Setup file system watchers for all configured directories."""
     observer = Observer()
-    handler = FileUploadHandler()
+    handler = FileUploadHandler(target_urls)
     
     for watch_dir in WATCHED_DIRS:
         watch_path = PROJECT_ROOT / watch_dir
@@ -233,22 +261,36 @@ def setup_watchers() -> Observer:
 
 def main():
     """Main entry point."""
+    parser = argparse.ArgumentParser(description="File watcher service for dashboard synchronization")
+    parser.add_argument(
+        "--target", 
+        required=True,
+        choices=["local", "server", "both"],
+        help="Target to upload to: 'local' (localhost:8000), 'server' (Railway), or 'both'"
+    )
+    
+    args = parser.parse_args()
+    target_urls = get_target_urls(args.target)
+    
     logger.info("Starting File Watcher Service")
-    logger.info(f"Railway URL: {RAILWAY_URL}")
+    logger.info(f"Target URLs: {', '.join(target_urls)}")
     logger.info(f"Project Root: {PROJECT_ROOT}")
     logger.info(f"Watched Directories: {WATCHED_DIRS}")
     
-    # Test Railway connection
-    try:
-        response = requests.get(f"{RAILWAY_URL}/health", timeout=5)
-        if response.status_code != 200:
-            logger.warning(f"Railway app health check failed: {response.status_code}")
-    except Exception as e:
-        logger.error(f"Cannot connect to Railway app: {e}")
-        logger.info("The watcher will still run, but uploads will fail until the Railway app is available")
+    # Test connection to all targets
+    for target_url in target_urls:
+        try:
+            response = requests.get(f"{target_url}/health", timeout=5)
+            if response.status_code != 200:
+                logger.warning(f"Target health check failed for {target_url}: {response.status_code}")
+            else:
+                logger.info(f"Successfully connected to {target_url}")
+        except Exception as e:
+            logger.error(f"Cannot connect to {target_url}: {e}")
+            logger.info("The watcher will still run, but uploads to this target will fail until it's available")
     
     # Setup and start watchers
-    observer = setup_watchers()
+    observer = setup_watchers(target_urls)
     observer.start()
     
     logger.info("File watcher started. Press Ctrl+C to stop.")

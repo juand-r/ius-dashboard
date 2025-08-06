@@ -7,9 +7,20 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Railway app URL - change this to your deployed Railway URL
-# RAILWAY_URL = os.getenv("RAILWAY_URL", "https://ius-dashboard-production.up.railway.app")  # Comment out for local testing
-RAILWAY_URL = os.getenv("RAILWAY_URL", "http://localhost:8000")  # Uncomment for local testing
+# Target URLs
+LOCAL_URL = "http://localhost:8000"
+RAILWAY_URL = "https://ius-dashboard-production.up.railway.app"
+
+def get_target_urls(target):
+    """Get list of URLs based on target specification."""
+    if target == "local":
+        return [LOCAL_URL]
+    elif target == "server":
+        return [RAILWAY_URL]
+    elif target == "both":
+        return [LOCAL_URL, RAILWAY_URL]
+    else:
+        raise ValueError(f"Invalid target: {target}. Must be 'local', 'server', or 'both'")
 
 # Directories to watch (relative to project root)
 WATCHED_DIRS = [
