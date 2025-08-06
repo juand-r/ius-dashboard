@@ -15,9 +15,11 @@ uvicorn main:app --reload --port 8000
 ```bash
 cd dashboard/watcher
 pip install -r requirements.txt
-cp env-template .env
-# Edit .env if needed (default uses localhost:8000)
-python main.py
+
+# Start watcher with target specification (required)
+python main.py --target local    # For local development
+python main.py --target server   # For Railway production
+python main.py --target both     # For both targets
 ```
 
 ### 3. Test the System
@@ -44,8 +46,19 @@ railway up      # Deploy the app
 ## Architecture
 
 ```
-Local Files → File Watcher → HTTP Upload → Railway Dashboard → Web UI
+Local Files → File Watcher → HTTP Upload → Dashboard(s) → Web UI
 ```
+
+### Sync Targets
+The system now supports flexible synchronization to multiple targets:
+- **`--target local`**: Sync only to local development server (localhost:8000)
+- **`--target server`**: Sync only to Railway production server
+- **`--target both`**: Sync to both local and production (keeps everything in sync)
+
+This allows you to:
+- Develop locally without affecting production
+- Push directly to production when needed
+- Keep both environments synchronized during development
 
 **Watched Directories:**
 - `outputs/chunks/`
@@ -67,9 +80,33 @@ The dashboard now features a modern, detective-style interface with 3-level navi
 source ~/Projects/ius/venv/bin/activate && cd ~/Projects/ius-dashboard/railway-app && uvicorn main:app --reload --port 8000
 ```
 
-### Start File Watcher (Optional)
+### Start File Watcher (Multiple Target Options)
 ```bash
-source ~/Projects/ius/venv/bin/activate && cd ~/Projects/ius-dashboard/watcher && python main.py
+source ~/Projects/ius/venv/bin/activate && cd ~/Projects/ius-dashboard/watcher
+
+# Sync to local dashboard only (for development)
+python main.py --target local
+
+# Sync to Railway production only
+python main.py --target server
+
+# Sync to both local and Railway (keep everything in sync)
+python main.py --target both
+```
+
+### Bulk Upload Existing Files
+If you need to upload all existing files (useful for initial setup or after changes):
+```bash
+source ~/Projects/ius/venv/bin/activate && cd ~/Projects/ius-dashboard/watcher
+
+# Upload all files to local dashboard only
+python upload_all.py --target local
+
+# Upload all files to Railway production only  
+python upload_all.py --target server
+
+# Upload all files to both targets
+python upload_all.py --target both
 ```
 
 ### Access Your Dashboard
