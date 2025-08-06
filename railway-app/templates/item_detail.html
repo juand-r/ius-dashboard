@@ -533,33 +533,37 @@
 
                 <!-- Right Column: Summaries -->
                 <div class="content-column">
-                    {% if item.summary_data and item.summary_data.summaries %}
+                    {% if item.summary_data and item.summary_data|length > 0 %}
+                    <!-- Multiple Summary Collections -->
+                    {% for collection in item.summary_data %}
                     <div class="collapsible-section">
-                        <div class="section-header" onclick="toggleSection('summaries-content')">
+                        <div class="section-header" onclick="toggleSection('summaries-{{ loop.index }}')">
                             <div class="section-header-left">
                                 <span class="section-icon">📋</span>
-                                <span class="section-title">Summaries</span>
+                                <span class="section-title">Summaries--{{ collection.strategy_name }}</span>
                             </div>
-                            <span class="toggle-icon" id="summaries-content-icon">▶</span>
+                            <span class="toggle-icon" id="summaries-{{ loop.index }}-icon">▶</span>
                         </div>
-                        <div class="section-content collapsed" id="summaries-content">
-                            <!-- Individual Summary Dropdowns -->
-                            {% for summary in item.summary_data.summaries %}
+                        <div class="section-content collapsed" id="summaries-{{ loop.index }}">
+                            <!-- Individual Summary Dropdowns within this collection -->
+                            {% set outer_loop_index = loop.index %}
+                            {% for summary in collection.summaries %}
                             <div class="collapsible-section" style="margin: 12px 0; border: 1px solid #e5e7eb;">
-                                <div class="section-header" onclick="toggleSection('summary-{{ loop.index }}')">
+                                <div class="section-header" onclick="toggleSection('summary-{{ outer_loop_index }}-{{ loop.index }}')">
                                     <div class="section-header-left">
                                         <span class="section-icon">📝</span>
-                                        <span class="section-title">Summary {{ loop.index }}{% if loop.index == item.summary_data.summaries|length %} (Complete){% endif %}</span>
+                                        <span class="section-title">Summary {{ loop.index }}</span>
                                     </div>
-                                    <span class="toggle-icon" id="summary-{{ loop.index }}-icon">▶</span>
+                                    <span class="toggle-icon" id="summary-{{ outer_loop_index }}-{{ loop.index }}-icon">▶</span>
                                 </div>
-                                <div class="section-content collapsed" id="summary-{{ loop.index }}">
+                                <div class="section-content collapsed" id="summary-{{ outer_loop_index }}-{{ loop.index }}">
                                     <div class="content-block">{{ summary }}</div>
                                 </div>
                             </div>
                             {% endfor %}
                         </div>
                     </div>
+                    {% endfor %}
                     {% else %}
                     <!-- No summaries available -->
                     <div class="collapsible-section" style="opacity: 0.6;">
