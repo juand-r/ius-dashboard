@@ -278,6 +278,32 @@ header h1 {
     padding: 20px;
 }
 
+/* Summary Header Styles */
+.section-title-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.summary-subtitle {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: normal;
+    margin-top: 2px;
+}
+
+/* Green styling for <500 words summaries */
+.summary-header-500-words {
+    background-color: #bbf7d0 !important;
+    border: 2px solid #16a34a !important;
+    box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2) !important;
+}
+
+.summary-header-500-words:hover {
+    background-color: #a7f3d0 !important;
+    border-color: #15803d !important;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .main-content {

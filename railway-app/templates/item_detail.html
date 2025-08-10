@@ -125,6 +125,18 @@
             background: #f1f5f9;
         }
 
+        /* Green styling for <500 words summaries */
+        .summary-header-500-words {
+            background-color: #bbf7d0 !important;
+            border: 2px solid #16a34a !important;
+            box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2) !important;
+        }
+
+        .summary-header-500-words:hover {
+            background-color: #a7f3d0 !important;
+            border-color: #15803d !important;
+        }
+
         .section-header-left {
             display: flex;
             align-items: center;
@@ -537,10 +549,18 @@
                     <!-- Multiple Summary Collections -->
                     {% for collection in item.summary_data %}
                     <div class="collapsible-section">
-                        <div class="section-header" onclick="toggleSection('summaries-{{ loop.index }}')">
+                        <div class="section-header{% if collection.config_metadata.is_500_words %} summary-header-500-words{% endif %}" onclick="toggleSection('summaries-{{ loop.index }}')">
+                        <!-- DEBUG: is_500_words={{ collection.config_metadata.is_500_words }}, length_constraint={{ collection.config_metadata.length_constraint }} -->
                             <div class="section-header-left">
                                 <span class="section-icon">📋</span>
-                                <span class="section-title">Summaries--{{ collection.strategy_name }}</span>
+                                <div class="section-title-container">
+                                    <span class="section-title">Summaries--{{ collection.strategy_name }}</span>
+                                    {% if collection.config_metadata.inputs or collection.config_metadata.output or collection.config_metadata.length_constraint_display %}
+                                    <div class="summary-subtitle">
+                                        {% if collection.config_metadata.inputs %}<strong>Inputs:</strong> {{ collection.config_metadata.inputs }}{% endif %}{% if collection.config_metadata.inputs and collection.config_metadata.output %} {% endif %}{% if collection.config_metadata.output %}<strong>Outputs:</strong> {{ collection.config_metadata.output }}{% endif %}{% if collection.config_metadata.length_constraint_display %} {{ collection.config_metadata.length_constraint_display }}{% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
                             </div>
                             <span class="toggle-icon" id="summaries-{{ loop.index }}-icon">▶</span>
                         </div>

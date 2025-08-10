@@ -563,13 +563,29 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                                 collection_meta = collection_json.get("summarization_info", {}).get("collection_metadata", {})
                                 hash_params = collection_meta.get("hash_parameters", {})
                                 
+                                # Map length constraint to display format
+                                length_constraint_raw = collection_meta.get("optional_summary_length", "")
+                                length_constraint_display = ""
+                                if length_constraint_raw == "summary":
+                                    length_constraint_display = ""
+                                elif length_constraint_raw == "summary in less than 200 words":
+                                    length_constraint_display = "(<200 words)"
+                                elif length_constraint_raw == "summary in less than 500 words":
+                                    length_constraint_display = "(<500 words)"
+                                elif length_constraint_raw == "and very long summary (as long as you can make it, try to reach 5000 words if possible)":
+                                    length_constraint_display = "(very long)"
+                                else:
+                                    length_constraint_display = f"({length_constraint_raw})" if length_constraint_raw else ""
+                                
                                 config_metadata = {
                                     "strategy": collection_meta.get("strategy_function", ""),
                                     "inputs": collection_meta.get("step_k_inputs", ""),
                                     "output": collection_meta.get("summary_content_type", ""),
                                     "model": collection_meta.get("model", ""),
                                     "prompts": collection_meta.get("prompt_name", ""),
-                                    "length_constraint": collection_meta.get("optional_summary_length", "")
+                                    "length_constraint": length_constraint_raw,
+                                    "length_constraint_display": length_constraint_display,
+                                    "is_500_words": length_constraint_raw == "summary in less than 500 words"
                                 }
                             except Exception as e:
                                 logger.error(f"Error reading collection.json for {summary_collection.name}: {e}")
@@ -587,6 +603,22 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                     except Exception as e:
                         logger.error(f"Error reading summary file {summary_file}: {e}")
                         continue
+
+        # Sort summary collections by length constraint priority
+        def get_sort_priority(collection):
+            length_constraint = collection.get("config_metadata", {}).get("length_constraint", "")
+            if length_constraint == "summary in less than 500 words":
+                return 1  # <500 words first
+            elif length_constraint == "summary":
+                return 2  # None (empty string) second
+            elif length_constraint == "summary in less than 200 words":
+                return 3  # <200 words third
+            elif length_constraint == "and very long summary (as long as you can make it, try to reach 5000 words if possible)":
+                return 4  # very long last
+            else:
+                return 5  # any other constraint at the end
+        
+        summary_data.sort(key=get_sort_priority)
 
         return {
             "id": item_id,
