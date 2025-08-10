@@ -49,6 +49,18 @@ railway up      # Deploy the app
 Local Files → File Watcher → HTTP Upload → Dashboard(s) → Web UI
 ```
 
+**Directory Structure:**
+```
+Projects/
+├── ius/                          ← Your main project
+│   ├── outputs/chunks/           ← Monitored
+│   ├── outputs/summaries/        ← Monitored  
+│   └── prompts/                  ← Monitored
+└── ius-dashboard/                ← Dashboard system (sister directory)
+    ├── watcher/                  ← File monitoring service
+    └── railway-app/              ← Web dashboard
+```
+
 ### Sync Targets
 The system now supports flexible synchronization to multiple targets:
 - **`--target local`**: Sync only to local development server (localhost:8000)
@@ -107,6 +119,46 @@ python upload_all.py --target server
 
 # Upload all files to both targets
 python upload_all.py --target both
+```
+
+### Sync Deletions (Clean Up Orphaned Files)
+If you've deleted files from your source directories but they still exist on the dashboard servers, use this script to clean them up:
+```bash
+source ~/Projects/ius/venv/bin/activate && cd ~/Projects/ius-dashboard/watcher
+
+# Preview what would be deleted (safe dry-run)
+python sync_deletions.py --target both --dry-run
+
+# Actually delete orphaned files from local dashboard only
+python sync_deletions.py --target local
+
+# Actually delete orphaned files from Railway production only
+python sync_deletions.py --target server
+
+# Actually delete orphaned files from both dashboards
+python sync_deletions.py --target both
+```
+
+**How it works:**
+- Compares files in your source directories (`~/Projects/ius/outputs/`) with what's on the dashboard servers
+- Identifies "orphaned" files that exist on servers but not in your source
+- Safely removes these orphaned files via the dashboard's delete API
+- **Never touches your source files** - they are read-only for comparison
+- Perfect for cleaning up after you delete collections locally (e.g., removing test datasets)
+
+**Always run with `--dry-run` first** to preview what will be deleted!
+
+## Process Management
+
+### Stopping the Watcher
+
+To stop the background watcher:
+```bash
+# Find the process ID
+ps aux | grep "python.*main.py" | grep -v grep
+
+# Kill the process (replace XXXX with the actual PID)
+kill XXXX
 ```
 
 ### Access Your Dashboard
