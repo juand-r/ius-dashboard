@@ -552,11 +552,34 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                         else:
                             strategy_name = summary_collection.name
                         
+                        # Load collection.json for config metadata
+                        config_metadata = {}
+                        collection_json_path = summary_collection / "collection.json"
+                        if collection_json_path.exists():
+                            try:
+                                with open(collection_json_path, 'r') as f:
+                                    collection_json = json.load(f)
+                                    
+                                collection_meta = collection_json.get("summarization_info", {}).get("collection_metadata", {})
+                                hash_params = collection_meta.get("hash_parameters", {})
+                                
+                                config_metadata = {
+                                    "strategy": collection_meta.get("strategy_function", ""),
+                                    "inputs": collection_meta.get("step_k_inputs", ""),
+                                    "output": collection_meta.get("summary_content_type", ""),
+                                    "model": collection_meta.get("model", ""),
+                                    "prompts": collection_meta.get("prompt_name", ""),
+                                    "length_constraint": collection_meta.get("optional_summary_length", "")
+                                }
+                            except Exception as e:
+                                logger.error(f"Error reading collection.json for {summary_collection.name}: {e}")
+                        
                         collection_data = {
                             "collection_name": summary_collection.name,
                             "strategy_name": strategy_name,
                             "summaries": summaries_list,
-                            "num_summaries": len(summaries_list)
+                            "num_summaries": len(summaries_list),
+                            "config_metadata": config_metadata
                         }
                         summary_data.append(collection_data)
                         logger.info(f"Loaded {len(summaries_list)} summaries for {item_id} from {summary_collection.name} (strategy: {strategy_name})")

@@ -545,6 +545,64 @@
                             <span class="toggle-icon" id="summaries-{{ loop.index }}-icon">▶</span>
                         </div>
                         <div class="section-content collapsed" id="summaries-{{ loop.index }}">
+                            
+                            <!-- Config Dropdown -->
+                            {% if collection.config_metadata %}
+                            <div class="collapsible-section" style="margin: 12px 0; border: 1px solid #e5e7eb;">
+                                <div class="section-header" onclick="toggleSection('config-{{ loop.index }}')">
+                                    <div class="section-header-left">
+                                        <span class="section-icon">⚙️</span>
+                                        <span class="section-title">Config</span>
+                                    </div>
+                                    <span class="toggle-icon" id="config-{{ loop.index }}-icon">▶</span>
+                                </div>
+                                <div class="section-content collapsed" id="config-{{ loop.index }}">
+                                    <div class="metadata-grid-2col">
+                                        <div class="metadata-column">
+                                            {% if collection.config_metadata.strategy %}
+                                            <div class="metadata-item">
+                                                <span class="metadata-label"><strong>Strategy:</strong></span>
+                                                <span class="metadata-value">{{ collection.config_metadata.strategy }}</span>
+                                            </div>
+                                            {% endif %}
+                                            {% if collection.config_metadata.inputs %}
+                                            <div class="metadata-item">
+                                                <span class="metadata-label"><strong>Inputs:</strong></span>
+                                                <span class="metadata-value">{{ collection.config_metadata.inputs }}</span>
+                                            </div>
+                                            {% endif %}
+                                            {% if collection.config_metadata.output %}
+                                            <div class="metadata-item">
+                                                <span class="metadata-label"><strong>Output:</strong></span>
+                                                <span class="metadata-value">{{ collection.config_metadata.output }}</span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="metadata-column">
+                                            {% if collection.config_metadata.model %}
+                                            <div class="metadata-item">
+                                                <span class="metadata-label"><strong>Model:</strong></span>
+                                                <span class="metadata-value">{{ collection.config_metadata.model }}</span>
+                                            </div>
+                                            {% endif %}
+                                            {% if collection.config_metadata.prompts %}
+                                            <div class="metadata-item">
+                                                <span class="metadata-label"><strong>Prompts:</strong></span>
+                                                <span class="metadata-value">{{ collection.config_metadata.prompts }}</span>
+                                            </div>
+                                            {% endif %}
+                                            {% if collection.config_metadata.length_constraint %}
+                                            <div class="metadata-item">
+                                                <span class="metadata-label"><strong>Length constraint:</strong></span>
+                                                <span class="metadata-value">{{ collection.config_metadata.length_constraint }}</span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
                             <!-- Individual Summary Dropdowns within this collection -->
                             {% set outer_loop_index = loop.index %}
                             {% for summary in collection.summaries %}
