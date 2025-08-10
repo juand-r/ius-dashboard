@@ -209,6 +209,38 @@ async def delete_file(path: str):
         logger.error(f"Error deleting file {path}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to delete file")
 
+@app.get("/api/prompts/{prompt_name}")
+async def get_prompts(prompt_name: str):
+    """Get prompt files for a given prompt name."""
+    prompts_dir = DATA_DIR / "prompts" / "summarization" / prompt_name
+    
+    if not prompts_dir.exists() or not prompts_dir.is_dir():
+        raise HTTPException(status_code=404, detail=f"Prompt directory '{prompt_name}' not found")
+    
+    try:
+        prompts = []
+        # Look for .txt files in the prompt directory
+        for prompt_file in prompts_dir.glob("*.txt"):
+            with open(prompt_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            prompts.append({
+                "filename": prompt_file.name,
+                "content": content
+            })
+        
+        if not prompts:
+            return {"prompt_name": prompt_name, "prompts": [], "message": "No .txt files found"}
+        
+        return {
+            "prompt_name": prompt_name,
+            "prompts": prompts
+        }
+        
+    except Exception as e:
+        logger.error(f"Error reading prompts for {prompt_name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error reading prompts: {e}")
+
 
 @app.get("/", response_class=HTMLResponse)
 async def landing_page(request: Request):

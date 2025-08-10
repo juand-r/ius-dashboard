@@ -137,6 +137,57 @@
             border-color: #15803d !important;
         }
 
+        /* Prompt Popover Styles */
+        .prompt-hover {
+            cursor: pointer;
+            text-decoration: underline;
+            color: #2563eb;
+        }
+
+        .prompt-hover:hover {
+            color: #1d4ed8;
+        }
+
+        .prompt-popover {
+            position: absolute;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            padding: 16px;
+            max-width: 500px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .prompt-popover h4 {
+            margin: 0 0 12px 0;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .prompt-content {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            margin-bottom: 12px;
+        }
+
+        .prompt-filename {
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 11px;
+            margin-bottom: 6px;
+        }
+
         .section-header-left {
             display: flex;
             align-items: center;
@@ -550,14 +601,13 @@
                     {% for collection in item.summary_data %}
                     <div class="collapsible-section">
                         <div class="section-header{% if collection.config_metadata.is_500_words %} summary-header-500-words{% endif %}" onclick="toggleSection('summaries-{{ loop.index }}')">
-                        <!-- DEBUG: is_500_words={{ collection.config_metadata.is_500_words }}, length_constraint={{ collection.config_metadata.length_constraint }} -->
                             <div class="section-header-left">
                                 <span class="section-icon">📋</span>
                                 <div class="section-title-container">
                                     <span class="section-title">Summaries--{{ collection.strategy_name }}</span>
                                     {% if collection.config_metadata.inputs or collection.config_metadata.output or collection.config_metadata.length_constraint_display %}
                                     <div class="summary-subtitle">
-                                        {% if collection.config_metadata.inputs %}<strong>Inputs:</strong> {{ collection.config_metadata.inputs }}{% endif %}{% if collection.config_metadata.inputs and collection.config_metadata.output %} {% endif %}{% if collection.config_metadata.output %}<strong>Outputs:</strong> {{ collection.config_metadata.output }}{% endif %}{% if collection.config_metadata.length_constraint_display %} {{ collection.config_metadata.length_constraint_display }}{% endif %}
+                                        {% if collection.config_metadata.inputs %}<strong>Inputs:</strong> {{ collection.config_metadata.inputs }}{% endif %}{% if collection.config_metadata.inputs and collection.config_metadata.output %} {% endif %}{% if collection.config_metadata.output %}<strong>Outputs:</strong> {{ collection.config_metadata.output }}{% endif %}{% if collection.config_metadata.length_constraint_display %} {{ collection.config_metadata.length_constraint_display }}{% endif %}{% if collection.config_metadata.prompts %} <span class="prompt-hover" onclick="event.stopPropagation(); showPromptPopover(event, '{{ collection.config_metadata.prompts }}')"><strong>Prompts</strong></span>{% endif %}
                                     </div>
                                     {% endif %}
                                 </div>
@@ -608,7 +658,11 @@
                                             {% if collection.config_metadata.prompts %}
                                             <div class="metadata-item">
                                                 <span class="metadata-label"><strong>Prompts:</strong></span>
-                                                <span class="metadata-value">{{ collection.config_metadata.prompts }}</span>
+                                                <span class="metadata-value">
+                                                    <span class="prompt-hover" onclick="showPromptPopover(event, '{{ collection.config_metadata.prompts }}')">
+                                                        {{ collection.config_metadata.prompts }}
+                                                    </span>
+                                                </span>
                                             </div>
                                             {% endif %}
                                             {% if collection.config_metadata.length_constraint %}
@@ -723,6 +777,69 @@
                 icon.textContent = '▶';
             });
         }
+
+        // Prompt Popover Functionality
+        let currentPopover = null;
+
+        function showPromptPopover(event, promptName) {
+            // Hide any existing popover
+            hidePromptPopover();
+
+            // Create popover element
+            const popover = document.createElement('div');
+            popover.className = 'prompt-popover';
+            popover.innerHTML = '<div style="text-align: center; color: #6b7280;">Loading prompts...</div>';
+            
+            // Position popover near the clicked element
+            const rect = event.target.getBoundingClientRect();
+            popover.style.left = (rect.left + window.scrollX) + 'px';
+            popover.style.top = (rect.bottom + window.scrollY + 5) + 'px';
+            
+            document.body.appendChild(popover);
+            popover.style.display = 'block';
+            currentPopover = popover;
+
+            // Fetch prompt data
+            fetch(`/api/prompts/${promptName}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.prompts && data.prompts.length > 0) {
+                        popover.innerHTML = `
+                            <h4>Prompts: ${data.prompt_name}</h4>
+                            ${data.prompts.map(prompt => `
+                                <div class="prompt-filename">${prompt.filename}</div>
+                                <div class="prompt-content">${prompt.content}</div>
+                            `).join('')}
+                        `;
+                    } else {
+                        popover.innerHTML = `
+                            <h4>Prompts: ${data.prompt_name}</h4>
+                            <div style="color: #6b7280; font-style: italic;">No prompt files found</div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading prompts:', error);
+                    popover.innerHTML = `
+                        <h4>Prompts: ${promptName}</h4>
+                        <div style="color: #dc2626;">Error loading prompts</div>
+                    `;
+                });
+        }
+
+        function hidePromptPopover() {
+            if (currentPopover) {
+                currentPopover.remove();
+                currentPopover = null;
+            }
+        }
+
+        // Hide popover when clicking elsewhere
+        document.addEventListener('click', function(event) {
+            if (currentPopover && !currentPopover.contains(event.target) && !event.target.classList.contains('prompt-hover')) {
+                hidePromptPopover();
+            }
+        });
     </script>
 </body>
 </html>
