@@ -27,7 +27,7 @@
         }
 
         .container {
-            max-width: 1500px;
+            max-width: 1800px;
             margin: 0 auto;
             padding: 0 20px;
         }
@@ -291,6 +291,73 @@
             display: inline-block;
         }
 
+        /* Main Layout with Sidebar */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .sidebar-item {
+            padding: 8px 12px;
+            margin: 2px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #6b7280;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-item:hover {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+
+        .sidebar-item.active {
+            background-color: #dbeafe;
+            color: #1d4ed8;
+            border-left-color: #3b82f6;
+            font-weight: 500;
+        }
+
+        .sidebar-item.green {
+            border-left-color: #16a34a;
+        }
+
+        .sidebar-item.green.active {
+            background-color: #dcfce7;
+            color: #15803d;
+            border-left-color: #16a34a;
+        }
+
+        .sidebar-item-subtitle {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 2px;
+        }
+
         /* Content Grid for Side-by-Side Layout */
         .content-grid-2col {
             display: grid;
@@ -302,6 +369,18 @@
         .content-column {
             display: flex;
             flex-direction: column;
+        }
+
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .sidebar {
+                position: static;
+                order: -1;
+            }
         }
 
         @media (max-width: 768px) {
@@ -558,7 +637,30 @@
             {% endif %}
 
             <!-- Content Section: Side-by-Side Text and Summaries -->
-            <div class="content-grid-2col">
+            <div class="main-layout">
+                <!-- Left Sidebar: Summary Navigation -->
+                <div class="sidebar">
+                    <div class="sidebar-title">📋 Summaries</div>
+                    {% if item.summary_data and item.summary_data|length > 0 %}
+                    {% for collection in item.summary_data %}
+                    <div class="sidebar-item{% if collection.config_metadata.is_500_words %} green{% endif %}" 
+                         onclick="navigateToSummary('summaries-{{ loop.index }}', this)"
+                         id="sidebar-item-{{ loop.index }}">
+                        <div>{{ collection.strategy_name }}</div>
+                        <div class="sidebar-item-subtitle">
+                            {% if collection.config_metadata.inputs %}{{ collection.config_metadata.inputs }}{% endif %}{% if collection.config_metadata.inputs and collection.config_metadata.output %} → {% endif %}{% if collection.config_metadata.output %}{{ collection.config_metadata.output }}{% endif %}{% if collection.config_metadata.length_constraint_display %} {{ collection.config_metadata.length_constraint_display }}{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="sidebar-item" style="opacity: 0.6; cursor: default;">
+                        No summaries available
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Main Content Area -->
+                <div class="content-grid-2col">
                 <!-- Left Column: Text (Chunks) -->
                 <div class="content-column">
                     <div class="collapsible-section">
@@ -715,6 +817,7 @@
                     {% endif %}
                 </div>
             </div>
+            </div> <!-- End main-layout -->
 
 
 
@@ -777,6 +880,57 @@
                 icon.textContent = '▶';
             });
         }
+
+        // Sidebar Navigation
+        function navigateToSummary(summaryId, sidebarItem) {
+            const targetSection = document.getElementById(summaryId);
+            
+            if (!targetSection) return;
+            
+            const container = targetSection.closest('.collapsible-section');
+            if (!container) return;
+            
+            // Toggle the sidebar item active state
+            sidebarItem.classList.toggle('active');
+            
+            // Toggle visibility of the entire summary collection container
+            if (container.style.display === 'none') {
+                // Show the container
+                container.style.display = 'block';
+                targetSection.classList.remove('collapsed');
+                targetSection.classList.add('expanded');
+                // Update the toggle icon
+                const icon = document.getElementById(summaryId + '-icon');
+                if (icon) icon.textContent = '▼';
+                
+                // Scroll to the summary section
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                // Hide the container
+                container.style.display = 'none';
+                targetSection.classList.remove('expanded');
+                targetSection.classList.add('collapsed');
+                // Update the toggle icon
+                const icon = document.getElementById(summaryId + '-icon');
+                if (icon) icon.textContent = '▶';
+            }
+        }
+        
+        // Initialize - hide all summary sections on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hide all summary collection containers (the entire collapsible-section divs)
+            document.querySelectorAll('[id^="summaries-"]').forEach(section => {
+                const container = section.closest('.collapsible-section');
+                if (container) {
+                    container.style.display = 'none';
+                }
+            });
+            
+            // Remove active state from all sidebar items initially
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active');
+            });
+        });
 
         // Prompt Popover Functionality
         let currentPopover = null;
