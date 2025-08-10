@@ -514,7 +514,7 @@
                                 <div class="section-header" onclick="toggleSection('chunk-{{ loop.index }}')">
                                     <div class="section-header-left">
                                         <span class="section-icon">📝</span>
-                                        <span class="section-title">Chunk {{ loop.index }}</span>
+                                        <span class="section-title">Chunk {{ loop.index }}{% if subcollection == "bmds_fixed_size2_8000" and loop.last %} (Reveal){% endif %}</span>
                                     </div>
                                     <span class="toggle-icon" id="chunk-{{ loop.index }}-icon">▶</span>
                                 </div>
