@@ -7,8 +7,14 @@ This script finds files that exist on the server but not locally and removes the
 import argparse
 import requests
 import logging
+import os
 from pathlib import Path
 from config import get_target_urls, PROJECT_ROOT, WATCHED_DIRS
+from requests.auth import HTTPBasicAuth
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Setup logging
 logging.basicConfig(
@@ -20,6 +26,52 @@ logger = logging.getLogger(__name__)
 # For local development, files are actually stored in railway-app/data/
 DASHBOARD_ROOT = Path(__file__).parent.parent
 LOCAL_DATA_DIR = DASHBOARD_ROOT / "railway-app" / "data"
+
+# Authentication credentials
+AUTH_USERNAME = os.getenv('PROTECTED_CONTENT_USERNAME', 'researcher')
+AUTH_PASSWORD_HASH = os.getenv('PROTECTED_CONTENT_PASSWORD_HASH')
+PROTECTED_DATASETS = (os.getenv('PROTECTED_DATASETS', 'detectiveqa')).split(',')
+
+# Global password storage
+_auth_password = None
+_auth_failed = False
+
+def is_protected_path(file_path):
+    """Check if a file path contains protected dataset content."""
+    return any(dataset.strip() in file_path for dataset in PROTECTED_DATASETS)
+
+def get_auth_for_url(target_url, file_path=None):
+    """Get authentication for protected content requests."""
+    global _auth_password, _auth_failed
+    
+    # Only require auth for proxy servers (localhost:3000 or railway.app) AND protected content
+    needs_auth = ('localhost:3000' in target_url or 'railway.app' in target_url)
+    
+    if not needs_auth:
+        return None
+    
+    # If we have a file path, check if it's protected content
+    if file_path and not is_protected_path(file_path):
+        return None
+    
+    # If we previously failed auth, don't keep trying
+    if _auth_failed:
+        return None
+    
+    # Get password if we don't have it
+    if not _auth_password:
+        print(f"⚠️  Authentication required for protected content on {target_url}")
+        _auth_password = input("Enter password: ").strip()
+        if not _auth_password:
+            _auth_failed = True
+            return None
+    
+    return HTTPBasicAuth(AUTH_USERNAME, _auth_password)
+
+def set_auth_password(password):
+    """Set the authentication password globally."""
+    global _auth_password
+    _auth_password = password
 
 
 def get_local_files():
@@ -44,7 +96,14 @@ def get_server_files(target_url):
     """Get set of all files on the server."""
     try:
         logger.info(f"Fetching file list from {target_url}")
+        # /api/files endpoint doesn't need auth (it just lists files, doesn't serve content)
         response = requests.get(f"{target_url}/api/files", timeout=30)
+        
+        # If we get 401, try with auth (in case the server requires it)
+        if response.status_code == 401:
+            logger.info("File listing requires authentication, trying with credentials...")
+            auth = get_auth_for_url(target_url)
+            response = requests.get(f"{target_url}/api/files", timeout=30, auth=auth)
         
         if response.status_code != 200:
             logger.error(f"Failed to get file list from {target_url}: {response.status_code}")
@@ -86,7 +145,9 @@ def delete_file_from_server(target_url, file_path):
     """Delete a single file from the server."""
     try:
         logger.info(f"Deleting {file_path} from {target_url}")
-        response = requests.delete(f"{target_url}/api/files/{file_path}", timeout=30)
+        # Check if this specific file needs authentication
+        auth = get_auth_for_url(target_url, file_path)
+        response = requests.delete(f"{target_url}/api/files/{file_path}", timeout=30, auth=auth)
         
         if response.status_code == 200:
             logger.info(f"✅ Successfully deleted: {file_path}")
@@ -169,9 +230,17 @@ def main():
         action="store_true",
         help="Show what would be deleted without actually deleting anything"
     )
+    parser.add_argument(
+        "--password",
+        help="Password for protected content authentication (will prompt if not provided)"
+    )
     
     args = parser.parse_args()
     target_urls = get_target_urls(args.target)
+    
+    # Set password if provided
+    if args.password:
+        set_auth_password(args.password)
     
     logger.info("🧹 Starting deletion sync")
     logger.info(f"Target URLs: {', '.join(target_urls)}")

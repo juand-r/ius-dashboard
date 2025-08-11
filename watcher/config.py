@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Target URLs
-LOCAL_URL = "http://localhost:8000"
-RAILWAY_URL = "https://ius-dashboard-production.up.railway.app"
+LOCAL_URL = "http://localhost:3000"  # Express proxy (handles auth + forwards to FastAPI)
+RAILWAY_URL = "https://ius-dashboard-production.up.railway.app"  # Express proxy on Railway
 
 def get_target_urls(target):
     """Get list of URLs based on target specification."""

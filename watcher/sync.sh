@@ -25,6 +25,16 @@ echo "🚀 Starting dashboard sync with target: $TARGET"
 cleanup() {
     echo ""
     echo "🛑 Shutting down..."
+    if [[ -n "$FASTAPI_PID" ]]; then
+        echo "Stopping FastAPI backend (PID: $FASTAPI_PID)"
+        kill $FASTAPI_PID 2>/dev/null || true
+        wait $FASTAPI_PID 2>/dev/null || true
+    fi
+    if [[ -n "$EXPRESS_PID" ]]; then
+        echo "Stopping Express proxy (PID: $EXPRESS_PID)"
+        kill $EXPRESS_PID 2>/dev/null || true
+        wait $EXPRESS_PID 2>/dev/null || true
+    fi
     if [[ -n "$UVICORN_PID" ]]; then
         echo "Stopping local server (PID: $UVICORN_PID)"
         kill $UVICORN_PID 2>/dev/null || true
@@ -38,10 +48,10 @@ trap cleanup SIGINT SIGTERM
 
 # Check if we need to start local server
 if [[ "$TARGET" == "local" || "$TARGET" == "both" ]]; then
-    echo "📡 Starting local dashboard server..."
+    echo "📡 Starting local dashboard servers..."
     
-    # Navigate to railway-app directory and start uvicorn in background
-    cd ../railway-app
+    # Navigate to project root
+    cd ..
     
     # Check if virtual environment activation is needed
     if [[ -z "$VIRTUAL_ENV" ]]; then
@@ -49,26 +59,43 @@ if [[ "$TARGET" == "local" || "$TARGET" == "both" ]]; then
         source ~/Projects/ius/venv/bin/activate
     fi
     
-    # Start uvicorn in background
-    uvicorn main:app --reload --port 8000 &
-    UVICORN_PID=$!
-    
-    echo "✅ Local server started (PID: $UVICORN_PID)"
-    echo "🌐 Dashboard available at: http://localhost:8000"
-    
-    # Wait a moment for server to start
-    echo "⏳ Waiting for server to start..."
-    sleep 3
-    
-    # Test if server is responding
-    if curl -s http://localhost:8000/health > /dev/null 2>&1; then
-        echo "✅ Local server is responding"
-    else
-        echo "⚠️  Local server may still be starting up..."
+    # Install Node.js dependencies if needed
+    if [[ ! -d "node_modules" ]]; then
+        echo "📦 Installing Node.js dependencies..."
+        npm install
     fi
     
-    # Navigate back to watcher directory
-    cd ../watcher
+    # Start FastAPI backend in background (port 8000)
+    echo "🔧 Starting FastAPI backend on port 8000..."
+    cd railway-app
+    uvicorn main:app --reload --host 127.0.0.1 --port 8000 &
+    FASTAPI_PID=$!
+    
+    # Start Express proxy server in background (port 3000)
+    echo "🔒 Starting Express proxy server on port 3000..."
+    cd ..
+    FASTAPI_PORT=8000 node server.js &
+    EXPRESS_PID=$!
+    UVICORN_PID=$EXPRESS_PID  # For cleanup compatibility
+    
+    echo "✅ FastAPI backend started (PID: $FASTAPI_PID)"
+    echo "✅ Express proxy started (PID: $EXPRESS_PID)"
+    echo "🌐 Dashboard available at: http://localhost:3000"
+    echo "🔒 DetectiveQA content requires authentication"
+    
+    # Wait a moment for servers to start
+    echo "⏳ Waiting for servers to start..."
+    sleep 5
+    
+    # Test if proxy server is responding
+    if curl -s http://localhost:3000/health > /dev/null 2>&1; then
+        echo "✅ Proxy server is responding"
+    else
+        echo "⚠️  Servers may still be starting up..."
+    fi
+    
+    # Navigate to watcher directory
+    cd watcher
 else
     echo "⏭️  Skipping local server (target is 'server' only)"
 fi
