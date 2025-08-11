@@ -617,7 +617,8 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                                     "prompts": collection_meta.get("prompt_name", ""),
                                     "length_constraint": length_constraint_raw,
                                     "length_constraint_display": length_constraint_display,
-                                    "is_500_words": length_constraint_raw == "summary in less than 500 words"
+                                    "is_500_words": length_constraint_raw == "summary in less than 500 words",
+                                    "final_only": collection_meta.get("final_only", "")
                                 }
                             except Exception as e:
                                 logger.error(f"Error reading collection.json for {summary_collection.name}: {e}")
