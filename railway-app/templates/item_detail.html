@@ -381,6 +381,29 @@
             background-color: #f3f4f6;
         }
 
+        /* Strategy group colors */
+        .sidebar-group-header.purple {
+            background-color: #e9d5ff;
+            color: #7c3aed;
+            border: 1px solid #c4b5fd;
+        }
+
+        .sidebar-group-header.purple:hover {
+            background-color: #ddd6fe;
+            border-color: #a78bfa;
+        }
+
+        .sidebar-group-header.pink {
+            background-color: #fce7f3;
+            color: #be185d;
+            border: 1px solid #f9a8d4;
+        }
+
+        .sidebar-group-header.pink:hover {
+            background-color: #fbcfe8;
+            border-color: #f472b6;
+        }
+
         .sidebar-group-icon {
             font-size: 10px;
             transition: transform 0.2s ease;
@@ -709,7 +732,7 @@
                     {% endfor %}
                     {% if concat_collections|length > 0 %}
                     <div class="sidebar-group">
-                        <div class="sidebar-group-header" onclick="toggleSidebarGroup('group-concat')">
+                        <div class="sidebar-group-header purple" onclick="toggleSidebarGroup('group-concat')">
                             <span class="sidebar-group-icon" id="group-concat-icon">▶</span>
                             <span>📁 concat</span>
                         </div>
@@ -741,7 +764,7 @@
                     {% endfor %}
                     {% if concat_final_collections|length > 0 %}
                     <div class="sidebar-group">
-                        <div class="sidebar-group-header" onclick="toggleSidebarGroup('group-concat-final')">
+                        <div class="sidebar-group-header purple" onclick="toggleSidebarGroup('group-concat-final')">
                             <span class="sidebar-group-icon" id="group-concat-final-icon">▶</span>
                             <span>📁 concat--final only</span>
                         </div>
@@ -773,7 +796,7 @@
                     {% endfor %}
                     {% if iterative_collections|length > 0 %}
                     <div class="sidebar-group">
-                        <div class="sidebar-group-header" onclick="toggleSidebarGroup('group-iterative')">
+                        <div class="sidebar-group-header purple" onclick="toggleSidebarGroup('group-iterative')">
                             <span class="sidebar-group-icon" id="group-iterative-icon">▶</span>
                             <span>📁 iterative</span>
                         </div>
@@ -805,7 +828,7 @@
                     {% endfor %}
                     {% if incremental_collections|length > 0 %}
                     <div class="sidebar-group">
-                        <div class="sidebar-group-header" onclick="toggleSidebarGroup('group-incremental')">
+                        <div class="sidebar-group-header purple" onclick="toggleSidebarGroup('group-incremental')">
                             <span class="sidebar-group-icon" id="group-incremental-icon">▶</span>
                             <span>📁 incremental</span>
                         </div>
@@ -837,7 +860,7 @@
                     {% endfor %}
                     {% if independent_collections|length > 0 %}
                     <div class="sidebar-group">
-                        <div class="sidebar-group-header" onclick="toggleSidebarGroup('group-independent')">
+                        <div class="sidebar-group-header pink" onclick="toggleSidebarGroup('group-independent')">
                             <span class="sidebar-group-icon" id="group-independent-icon">▶</span>
                             <span>📁 independent</span>
                         </div>
@@ -869,7 +892,7 @@
                     {% endfor %}
                     {% if update_collections|length > 0 %}
                     <div class="sidebar-group">
-                        <div class="sidebar-group-header" onclick="toggleSidebarGroup('group-update')">
+                        <div class="sidebar-group-header pink" onclick="toggleSidebarGroup('group-update')">
                             <span class="sidebar-group-icon" id="group-update-icon">▶</span>
                             <span>📁 update</span>
                         </div>
