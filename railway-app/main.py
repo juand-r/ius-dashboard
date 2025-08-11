@@ -652,6 +652,14 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                 return 5  # any other constraint at the end
         
         summary_data.sort(key=get_sort_priority)
+        
+        # Group summaries by strategy for hierarchical display
+        grouped_summaries = {}
+        for collection in summary_data:
+            strategy = collection["strategy_name"]
+            if strategy not in grouped_summaries:
+                grouped_summaries[strategy] = []
+            grouped_summaries[strategy].append(collection)
 
         return {
             "id": item_id,
@@ -664,6 +672,7 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
             "story_info": story_info if dataset == "bmds" else {},
             "full_content": content,
             "summary_data": summary_data,  # New field for summaries
+            "grouped_summaries": grouped_summaries,  # Hierarchical grouping
             "file_size": item_file.stat().st_size,
             "modified": datetime.fromtimestamp(item_file.stat().st_mtime).isoformat()
         }

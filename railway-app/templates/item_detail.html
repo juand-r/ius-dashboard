@@ -358,6 +358,58 @@
             margin-top: 2px;
         }
 
+        /* Hierarchical sidebar styles */
+        .sidebar-group {
+            margin-bottom: 8px;
+        }
+
+        .sidebar-group-header {
+            padding: 6px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4b5563;
+            background-color: #f9fafb;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sidebar-group-header:hover {
+            background-color: #f3f4f6;
+        }
+
+        .sidebar-group-icon {
+            font-size: 10px;
+            transition: transform 0.2s ease;
+        }
+
+        .sidebar-group-icon.expanded {
+            transform: rotate(90deg);
+        }
+
+        .sidebar-group-content {
+            margin-left: 12px;
+            border-left: 1px solid #e5e7eb;
+            padding-left: 8px;
+        }
+
+        .sidebar-group-content.collapsed {
+            display: none;
+        }
+
+        .sidebar-item.child {
+            margin: 1px 0;
+            font-size: 12px;
+            padding: 6px 8px;
+        }
+
+        .sidebar-item.child .sidebar-item-subtitle {
+            font-size: 10px;
+        }
+
         /* Content Grid for Side-by-Side Layout */
         .content-grid-2col {
             display: grid;
@@ -642,16 +694,104 @@
                 <div class="sidebar">
                     <div class="sidebar-title">📋 Summaries</div>
                     {% if item.summary_data and item.summary_data|length > 0 %}
+                    
+
+                    <!-- Group: concat -->
+                    {% set concat_collections = [] %}
                     {% for collection in item.summary_data %}
-                    <div class="sidebar-item{% if collection.config_metadata.is_500_words %} green{% endif %}" 
-                         onclick="navigateToSummary('summaries-{{ loop.index }}', this)"
-                         id="sidebar-item-{{ loop.index }}">
-                        <div>{{ collection.strategy_name }}</div>
-                        <div class="sidebar-item-subtitle">
-                            {% if collection.config_metadata.inputs %}{{ collection.config_metadata.inputs }}{% endif %}{% if collection.config_metadata.inputs and collection.config_metadata.output %} → {% endif %}{% if collection.config_metadata.output %}{{ collection.config_metadata.output }}{% endif %}{% if collection.config_metadata.length_constraint_display %} {{ collection.config_metadata.length_constraint_display }}{% endif %}
+                        {% if collection.strategy_name.startswith('concat') %}
+                            {% set _ = concat_collections.append(collection) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if concat_collections|length > 0 %}
+                    <div class="sidebar-group">
+                        <div class="sidebar-group-header" onclick="toggleSidebarGroup('group-concat')">
+                            <span class="sidebar-group-icon" id="group-concat-icon">▶</span>
+                            <span>📁 concat</span>
+                        </div>
+                        <div class="sidebar-group-content collapsed" id="group-concat">
+                            {% for collection in concat_collections %}
+                            {% for orig_collection in item.summary_data %}
+                                {% if orig_collection.collection_name == collection.collection_name %}
+                                    <div class="sidebar-item child{% if collection.config_metadata.is_500_words %} green{% endif %}" 
+                                         onclick="navigateToSummary('summaries-{{ loop.index }}', this)"
+                                         id="sidebar-item-concat-{{ loop.index }}">
+                                        <div>📄 {{ collection.config_metadata.length_constraint_display or 'No length specified' }}</div>
+                                        <div class="sidebar-item-subtitle">
+                                            {% if collection.config_metadata.inputs %}{{ collection.config_metadata.inputs }}{% endif %}{% if collection.config_metadata.inputs and collection.config_metadata.output %} → {% endif %}{% if collection.config_metadata.output %}{{ collection.config_metadata.output }}{% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                            {% endfor %}
                         </div>
                     </div>
+                    {% endif %}
+                    
+                    <!-- Group: iterative -->
+                    {% set iterative_collections = [] %}
+                    {% for collection in item.summary_data %}
+                        {% if collection.strategy_name.startswith('iterative') %}
+                            {% set _ = iterative_collections.append(collection) %}
+                        {% endif %}
                     {% endfor %}
+                    {% if iterative_collections|length > 0 %}
+                    <div class="sidebar-group">
+                        <div class="sidebar-group-header" onclick="toggleSidebarGroup('group-iterative')">
+                            <span class="sidebar-group-icon" id="group-iterative-icon">▶</span>
+                            <span>📁 iterative</span>
+                        </div>
+                        <div class="sidebar-group-content collapsed" id="group-iterative">
+                            {% for collection in iterative_collections %}
+                            {% for orig_collection in item.summary_data %}
+                                {% if orig_collection.collection_name == collection.collection_name %}
+                                    <div class="sidebar-item child{% if collection.config_metadata.is_500_words %} green{% endif %}" 
+                                         onclick="navigateToSummary('summaries-{{ loop.index }}', this)"
+                                         id="sidebar-item-iterative-{{ loop.index }}">
+                                        <div>📄 {{ collection.config_metadata.length_constraint_display or 'No length specified' }}</div>
+                                        <div class="sidebar-item-subtitle">
+                                            {% if collection.config_metadata.inputs %}{{ collection.config_metadata.inputs }}{% endif %}{% if collection.config_metadata.inputs and collection.config_metadata.output %} → {% endif %}{% if collection.config_metadata.output %}{{ collection.config_metadata.output }}{% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Group: incremental -->
+                    {% set incremental_collections = [] %}
+                    {% for collection in item.summary_data %}
+                        {% if collection.strategy_name.startswith('incremental') %}
+                            {% set _ = incremental_collections.append(collection) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if incremental_collections|length > 0 %}
+                    <div class="sidebar-group">
+                        <div class="sidebar-group-header" onclick="toggleSidebarGroup('group-incremental')">
+                            <span class="sidebar-group-icon" id="group-incremental-icon">▶</span>
+                            <span>📁 incremental</span>
+                        </div>
+                        <div class="sidebar-group-content collapsed" id="group-incremental">
+                            {% for collection in incremental_collections %}
+                            {% for orig_collection in item.summary_data %}
+                                {% if orig_collection.collection_name == collection.collection_name %}
+                                    <div class="sidebar-item child{% if collection.config_metadata.is_500_words %} green{% endif %}" 
+                                         onclick="navigateToSummary('summaries-{{ loop.index }}', this)"
+                                         id="sidebar-item-incremental-{{ loop.index }}">
+                                        <div>📄 {{ collection.config_metadata.length_constraint_display or 'No length specified' }}</div>
+                                        <div class="sidebar-item-subtitle">
+                                            {% if collection.config_metadata.inputs %}{{ collection.config_metadata.inputs }}{% endif %}{% if collection.config_metadata.inputs and collection.config_metadata.output %} → {% endif %}{% if collection.config_metadata.output %}{{ collection.config_metadata.output }}{% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
                     {% else %}
                     <div class="sidebar-item" style="opacity: 0.6; cursor: default;">
                         No summaries available
@@ -883,6 +1023,22 @@
                 icon.classList.remove('expanded');
                 icon.textContent = '▶';
             });
+        }
+
+        // Sidebar Group Toggle
+        function toggleSidebarGroup(groupId) {
+            const content = document.getElementById(groupId);
+            const icon = document.getElementById(groupId + '-icon');
+            
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                icon.classList.add('expanded');
+                icon.textContent = '▼';
+            } else {
+                content.classList.add('collapsed');
+                icon.classList.remove('expanded');
+                icon.textContent = '▶';
+            }
         }
 
         // Sidebar Navigation
