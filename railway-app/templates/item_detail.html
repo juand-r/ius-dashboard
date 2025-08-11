@@ -696,10 +696,10 @@
                     {% if item.summary_data and item.summary_data|length > 0 %}
                     
 
-                    <!-- Group: concat -->
+                    <!-- Group: concat (non-final only) -->
                     {% set concat_collections = [] %}
                     {% for collection in item.summary_data %}
-                        {% if collection.strategy_name.startswith('concat') %}
+                        {% if collection.strategy_name.startswith('concat') and not collection.config_metadata.final_only %}
                             {% set _ = concat_collections.append(collection) %}
                         {% endif %}
                     {% endfor %}
@@ -716,6 +716,38 @@
                                     <div class="sidebar-item child{% if collection.config_metadata.is_500_words %} green{% endif %}" 
                                          onclick="navigateToSummary('summaries-{{ loop.index }}', this)"
                                          id="sidebar-item-concat-{{ loop.index }}">
+                                        <div>📄 {{ collection.config_metadata.length_constraint_display or 'No length specified' }}</div>
+                                        <div class="sidebar-item-subtitle">
+                                            {% if collection.config_metadata.inputs %}{{ collection.config_metadata.inputs }}{% endif %}{% if collection.config_metadata.inputs and collection.config_metadata.output %} → {% endif %}{% if collection.config_metadata.output %}{{ collection.config_metadata.output }}{% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Group: concat--final only -->
+                    {% set concat_final_collections = [] %}
+                    {% for collection in item.summary_data %}
+                        {% if collection.strategy_name.startswith('concat') and collection.config_metadata.final_only %}
+                            {% set _ = concat_final_collections.append(collection) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if concat_final_collections|length > 0 %}
+                    <div class="sidebar-group">
+                        <div class="sidebar-group-header" onclick="toggleSidebarGroup('group-concat-final')">
+                            <span class="sidebar-group-icon" id="group-concat-final-icon">▶</span>
+                            <span>📁 concat--final only</span>
+                        </div>
+                        <div class="sidebar-group-content collapsed" id="group-concat-final">
+                            {% for collection in concat_final_collections %}
+                            {% for orig_collection in item.summary_data %}
+                                {% if orig_collection.collection_name == collection.collection_name %}
+                                    <div class="sidebar-item child{% if collection.config_metadata.is_500_words %} green{% endif %}" 
+                                         onclick="navigateToSummary('summaries-{{ loop.index }}', this)"
+                                         id="sidebar-item-concat-final-{{ loop.index }}">
                                         <div>📄 {{ collection.config_metadata.length_constraint_display or 'No length specified' }}</div>
                                         <div class="sidebar-item-subtitle">
                                             {% if collection.config_metadata.inputs %}{{ collection.config_metadata.inputs }}{% endif %}{% if collection.config_metadata.inputs and collection.config_metadata.output %} → {% endif %}{% if collection.config_metadata.output %}{{ collection.config_metadata.output }}{% endif %}
