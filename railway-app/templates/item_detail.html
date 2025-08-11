@@ -828,6 +828,38 @@
                     </div>
                     {% endif %}
                     
+                    <!-- Group: independent -->
+                    {% set independent_collections = [] %}
+                    {% for collection in item.summary_data %}
+                        {% if collection.strategy_name.startswith('independent') %}
+                            {% set _ = independent_collections.append(collection) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if independent_collections|length > 0 %}
+                    <div class="sidebar-group">
+                        <div class="sidebar-group-header" onclick="toggleSidebarGroup('group-independent')">
+                            <span class="sidebar-group-icon" id="group-independent-icon">▶</span>
+                            <span>📁 independent</span>
+                        </div>
+                        <div class="sidebar-group-content collapsed" id="group-independent">
+                            {% for collection in independent_collections %}
+                            {% for orig_collection in item.summary_data %}
+                                {% if orig_collection.collection_name == collection.collection_name %}
+                                    <div class="sidebar-item child{% if collection.config_metadata.is_500_words %} green{% endif %}" 
+                                         onclick="navigateToSummary('summaries-{{ loop.index }}', this)"
+                                         id="sidebar-item-independent-{{ loop.index }}">
+                                        <div>📄 {{ collection.config_metadata.length_constraint_display or 'No length specified' }}</div>
+                                        <div class="sidebar-item-subtitle">
+                                            {% if collection.config_metadata.inputs %}{{ collection.config_metadata.inputs }}{% endif %}{% if collection.config_metadata.inputs and collection.config_metadata.output %} → {% endif %}{% if collection.config_metadata.output %}{{ collection.config_metadata.output }}{% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
                     {% else %}
                     <div class="sidebar-item" style="opacity: 0.6; cursor: default;">
                         No summaries available
