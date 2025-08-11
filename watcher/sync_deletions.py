@@ -44,7 +44,7 @@ def get_auth_for_url(target_url, file_path=None):
     """Get authentication for protected content requests."""
     global _auth_password, _auth_failed
     
-    # Only require auth for proxy servers (localhost:3000 or railway.app) AND protected content
+    # Only require auth for proxy servers (localhost:3000 or railway.app)
     needs_auth = ('localhost:3000' in target_url or 'railway.app' in target_url)
     
     if not needs_auth:

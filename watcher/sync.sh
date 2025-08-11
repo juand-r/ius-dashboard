@@ -112,8 +112,29 @@ fi
 echo "👀 Starting file watcher..."
 echo "📁 Monitoring directories for changes..."
 echo "🎯 Target: $TARGET"
+
+# Check if we need authentication for protected content
+if [[ "$TARGET" == "server" || "$TARGET" == "both" ]]; then
+    echo ""
+    echo "🔒 This target may require authentication for protected content (DetectiveQA, etc.)"
+    echo "💡 You can provide a password now, or enter it later when prompted"
+    echo ""
+    read -s -p "Enter password (leave empty to prompt later): " PASSWORD
+    echo ""
+    
+    if [[ -n "$PASSWORD" ]]; then
+        echo "✅ Password provided - will authenticate automatically"
+        WATCHER_CMD="python main.py --target \"$TARGET\" --password \"$PASSWORD\""
+    else
+        echo "⏳ Will prompt for password when needed"
+        WATCHER_CMD="python main.py --target \"$TARGET\""
+    fi
+else
+    WATCHER_CMD="python main.py --target \"$TARGET\""
+fi
+
 echo ""
 echo "Press Ctrl+C to stop"
 
 # Start the watcher (this will run in foreground)
-python main.py --target "$TARGET"
+eval "$WATCHER_CMD"

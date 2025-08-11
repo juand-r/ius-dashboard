@@ -16,13 +16,56 @@ from datetime import datetime
 from typing import Dict, Set, List
 
 import requests
+from requests.auth import HTTPBasicAuth
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, FileModifiedEvent, FileCreatedEvent
+
+# Load environment variables
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv not available, use system env vars
 
 from config import (
     get_target_urls, WATCHED_DIRS, DEBOUNCE_SECONDS, PROJECT_ROOT,
     WATCH_PATTERNS, IGNORE_PATTERNS, MAX_FILE_SIZE, LOG_LEVEL
 )
+
+# Authentication credentials
+AUTH_USERNAME = os.getenv('PROTECTED_CONTENT_USERNAME', 'researcher')
+PROTECTED_DATASETS = (os.getenv('PROTECTED_DATASETS', 'detectiveqa')).split(',')
+
+# Global password storage
+_auth_password = None
+
+def is_protected_path(file_path):
+    """Check if a file path contains protected dataset content."""
+    return any(dataset.strip() in str(file_path) for dataset in PROTECTED_DATASETS)
+
+def get_auth_for_upload(target_url, file_path):
+    """Get authentication for protected content uploads."""
+    global _auth_password
+    
+    # Only require auth for proxy servers AND protected content
+    needs_proxy_auth = ('localhost:3000' in target_url or 'railway.app' in target_url)
+    
+    if not needs_proxy_auth or not is_protected_path(file_path):
+        return None
+    
+    # Get password if we don't have it
+    if not _auth_password:
+        print(f"⚠️  Authentication required for protected content upload to {target_url}")
+        _auth_password = input("Enter password: ").strip()
+        if not _auth_password:
+            return None
+    
+    return HTTPBasicAuth(AUTH_USERNAME, _auth_password)
+
+def set_auth_password(password):
+    """Set the authentication password globally."""
+    global _auth_password
+    _auth_password = password
 
 # Setup logging
 logging.basicConfig(
@@ -175,10 +218,12 @@ class FileUploadHandler(FileSystemEventHandler):
             # Read and upload file
             with open(filepath, 'rb') as file:
                 files = {'file': file}
+                auth = get_auth_for_upload(target_url, relative_path)
                 response = requests.post(
                     f"{target_url}/upload",
                     files=files,
                     data=upload_data,
+                    auth=auth,
                     timeout=30
                 )
                 
@@ -268,9 +313,17 @@ def main():
         choices=["local", "server", "both"],
         help="Target to upload to: 'local' (localhost:8000), 'server' (Railway), or 'both'"
     )
+    parser.add_argument(
+        "--password",
+        help="Password for protected content authentication (will prompt if not provided)"
+    )
     
     args = parser.parse_args()
     target_urls = get_target_urls(args.target)
+    
+    # Set password if provided
+    if args.password:
+        set_auth_password(args.password)
     
     logger.info("Starting File Watcher Service")
     logger.info(f"Target URLs: {', '.join(target_urls)}")
