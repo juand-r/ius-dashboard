@@ -8,7 +8,7 @@ import json
 import requests
 import os
 from pathlib import Path
-from config import get_target_urls, PROJECT_ROOT, WATCHED_DIRS
+from config import get_target_urls, PROJECT_ROOT, WATCHED_DIRS, WATCH_PATTERNS
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 
@@ -130,8 +130,12 @@ def main():
             
         print(f"\n📂 Processing: {watch_path}")
         
-        # Find all JSON and TXT files
-        for file_path in list(watch_path.rglob("*.json")) + list(watch_path.rglob("*.txt")):
+        # Find all files matching watch patterns
+        all_files = []
+        for pattern in WATCH_PATTERNS:
+            all_files.extend(watch_path.rglob(pattern))
+        
+        for file_path in all_files:
             total_files += 1
             relative_path = file_path.relative_to(PROJECT_ROOT)
             

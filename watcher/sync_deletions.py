@@ -9,7 +9,7 @@ import requests
 import logging
 import os
 from pathlib import Path
-from config import get_target_urls, PROJECT_ROOT, WATCHED_DIRS
+from config import get_target_urls, PROJECT_ROOT, WATCHED_DIRS, WATCH_PATTERNS
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 
@@ -82,8 +82,8 @@ def get_local_files():
     for watch_dir in WATCHED_DIRS:
         watch_path = PROJECT_ROOT / watch_dir
         if watch_path.exists():
-            # Find all .json and .txt files
-            for pattern in ["**/*.json", "**/*.txt"]:
+            # Find all files matching watch patterns
+            for pattern in [f"**/{watch_pattern}" for watch_pattern in WATCH_PATTERNS]:
                 for file_path in watch_path.glob(pattern):
                     if file_path.is_file():
                         relative_path = str(file_path.relative_to(PROJECT_ROOT))

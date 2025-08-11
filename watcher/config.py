@@ -37,7 +37,18 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent / "ius"
 
 # File patterns to watch (empty list means all files)
 # You can add patterns like ["*.json", "*.txt"] to limit file types
-WATCH_PATTERNS = []
+WATCH_PATTERNS = [
+    "*.json",
+    "*.jsonl",
+    "*.txt",
+    "*.csv",
+    "*.tsv",
+    "*.parquet",
+    "*.md",
+    "*.rst",
+    "*.yaml",
+    "*.yml"
+]
 
 # File patterns to ignore
 IGNORE_PATTERNS = [
