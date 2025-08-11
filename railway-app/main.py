@@ -403,13 +403,53 @@ async def get_collection_items(dataset: str, subcollection: str = None):
                             with open(item_file, 'r') as f:
                                 content = json.load(f)
                             
-                            # Extract preview content (first 200 chars)
+                            # Extract rich metadata for bmds and detectiveqa
+                            title = ""
+                            author = ""
+                            description = ""
+                            char_count = len(content.get("content", ""))
+                            
+                            if dataset == "bmds":
+                                doc_meta = content.get("documents", [{}])[0].get("metadata", {}).get("original_metadata", {}).get("original_metadata", {}) if content.get("documents") else {}
+                                story_annotations = doc_meta.get("story_annotations", {})
+                                author_meta = doc_meta.get("author_metadata", {})
+                                
+                                title = story_annotations.get("Story Title", "")
+                                given_names = author_meta.get("Given Name(s)", "")
+                                surname = author_meta.get("Surname(s)", "")
+                                author = f"{given_names} {surname}".strip() if given_names or surname else ""
+                                description = story_annotations.get("Plot Summary", "")
+                                
+                            elif dataset == "detectiveqa":
+                                doc_meta = content.get("documents", [{}])[0].get("metadata", {}).get("original_metadata", {}) if content.get("documents") else {}
+                                
+                                title = doc_meta.get("title", "")
+                                author = doc_meta.get("author", "")
+                                
+                                # Extract questions and concatenate them
+                                questions_list = doc_meta.get("questions", [])
+                                if questions_list:
+                                    question_texts = []
+                                    for q in questions_list:
+                                        if isinstance(q, dict) and "question" in q:
+                                            question_texts.append(q["question"])
+                                    description = " ".join(question_texts)
+                            
+                            # Truncate description to 192 characters
+                            if description and len(description) > 192:
+                                description = description[:192] + "..."
+                            
+                            # Extract preview content (first 200 chars) as fallback
                             preview = content.get("content", "")[:200] + "..." if len(content.get("content", "")) > 200 else content.get("content", "")
                             
                             items.append({
                                 "id": item_file.stem,
                                 "name": content.get("id", item_file.stem),
                                 "preview": preview,
+                                "title": title,
+                                "author": author,
+                                "description": description,
+                                "char_count": char_count,
                                 "collection_name": collection_dir.name,
                                 "size": item_file.stat().st_size,
                                 "modified": datetime.fromtimestamp(item_file.stat().st_mtime).isoformat(),
@@ -432,13 +472,53 @@ async def get_collection_items(dataset: str, subcollection: str = None):
                                 with open(item_file, 'r') as f:
                                     content = json.load(f)
                                 
-                                # Extract preview content (first 200 chars)
+                                # Extract rich metadata for bmds and detectiveqa
+                                title = ""
+                                author = ""
+                                description = ""
+                                char_count = len(content.get("content", ""))
+                                
+                                if dataset == "bmds":
+                                    doc_meta = content.get("documents", [{}])[0].get("metadata", {}).get("original_metadata", {}).get("original_metadata", {}) if content.get("documents") else {}
+                                    story_annotations = doc_meta.get("story_annotations", {})
+                                    author_meta = doc_meta.get("author_metadata", {})
+                                    
+                                    title = story_annotations.get("Story Title", "")
+                                    given_names = author_meta.get("Given Name(s)", "")
+                                    surname = author_meta.get("Surname(s)", "")
+                                    author = f"{given_names} {surname}".strip() if given_names or surname else ""
+                                    description = story_annotations.get("Plot Summary", "")
+                                    
+                                elif dataset == "detectiveqa":
+                                    doc_meta = content.get("documents", [{}])[0].get("metadata", {}).get("original_metadata", {}) if content.get("documents") else {}
+                                    
+                                    title = doc_meta.get("title", "")
+                                    author = doc_meta.get("author", "")
+                                    
+                                    # Extract questions and concatenate them
+                                    questions_list = doc_meta.get("questions", [])
+                                    if questions_list:
+                                        question_texts = []
+                                        for q in questions_list:
+                                            if isinstance(q, dict) and "question" in q:
+                                                question_texts.append(q["question"])
+                                        description = " ".join(question_texts)
+                                
+                                # Truncate description to 192 characters
+                                if description and len(description) > 192:
+                                    description = description[:192] + "..."
+                                
+                                # Extract preview content (first 200 chars) as fallback
                                 preview = content.get("content", "")[:200] + "..." if len(content.get("content", "")) > 200 else content.get("content", "")
                                 
                                 items.append({
                                     "id": item_file.stem,
                                     "name": content.get("id", item_file.stem),
                                     "preview": preview,
+                                    "title": title,
+                                    "author": author,
+                                    "description": description,
+                                    "char_count": char_count,
                                     "collection_name": collection_dir.name,
                                     "size": item_file.stat().st_size,
                                     "modified": datetime.fromtimestamp(item_file.stat().st_mtime).isoformat(),
@@ -488,6 +568,8 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
         
         # Extract crimes/clues metadata (BMDS-specific)
         crimes_metadata = {}
+        story_info = {}
+        
         if dataset == "bmds":
             doc_meta = content.get("documents", [{}])[0].get("metadata", {}).get("original_metadata", {}).get("original_metadata", {}) if content.get("documents") else {}
             story_annotations = doc_meta.get("story_annotations", {})
@@ -543,6 +625,32 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                 "plot_summary": story_annotations.get("Plot Summary", ""),
                 "author": author_name,
                 "publication_year": pub_year
+            }
+        
+        # Extract detectiveqa-specific metadata
+        elif dataset == "detectiveqa":
+            doc_meta = content.get("documents", [{}])[0].get("metadata", {}).get("original_metadata", {}) if content.get("documents") else {}
+            
+            # Extract title and author
+            title = doc_meta.get("title", "")
+            author = doc_meta.get("author", "")
+            
+            # Extract questions and concatenate them
+            questions_list = doc_meta.get("questions", [])
+            questions_text = ""
+            if questions_list:
+                question_texts = []
+                for q in questions_list:
+                    if isinstance(q, dict) and "question" in q:
+                        question_texts.append(q["question"])
+                questions_text = " ".join(question_texts)
+            
+            # Create story info for detectiveqa
+            story_info = {
+                "title": title,
+                "plot_summary": questions_text,  # Using questions as plot summary equivalent
+                "author": author,
+                "publication_year": ""  # No publication year in detectiveqa
             }
         
         # Try to load summary data from all matching collections
@@ -669,7 +777,7 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
             "content": content.get("content", ""),
             "chunk_metadata": chunk_metadata,
             "crimes_metadata": crimes_metadata,
-            "story_info": story_info if dataset == "bmds" else {},
+            "story_info": story_info if dataset in ["bmds", "detectiveqa"] else {},
             "full_content": content,
             "summary_data": summary_data,  # New field for summaries
             "grouped_summaries": grouped_summaries,  # Hierarchical grouping

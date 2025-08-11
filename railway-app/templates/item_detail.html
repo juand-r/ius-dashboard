@@ -550,7 +550,11 @@
                 {% endif %}
                 {% if item.story_info.plot_summary %}
                 <div class="story-summary">
+                    {% if dataset == "bmds" %}
                     <h3>Plot Summary</h3>
+                    {% elif dataset == "detectiveqa" %}
+                    <h3>Questions</h3>
+                    {% endif %}
                     <p>{{ item.story_info.plot_summary }}</p>
                 </div>
                 {% endif %}

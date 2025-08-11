@@ -174,6 +174,45 @@
             margin-bottom: 8px;
             color: #1e293b;
         }
+
+        /* Rich tile styles for bmds and detectiveqa */
+        .rich-tile {
+            padding: 0;
+        }
+
+        .story-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e293b;
+            margin: 0 0 8px 0;
+            line-height: 1.3;
+        }
+
+        .story-author {
+            font-size: 14px;
+            color: #7c3aed;
+            margin-bottom: 8px;
+            font-style: italic;
+        }
+
+        .story-code {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .story-chars {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 12px;
+        }
+
+        .story-description {
+            font-size: 14px;
+            color: #475569;
+            line-height: 1.4;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
@@ -210,6 +249,20 @@
             <div class="items-grid" id="items-grid">
                 {% for item in items %}
                 <a href="/{{ dataset }}/{{ subcollection }}/item/{{ item.id }}" class="item-card">
+                    {% if dataset in ["bmds", "detectiveqa"] and item.title %}
+                    <!-- Rich tile format for bmds and detectiveqa -->
+                    <div class="rich-tile">
+                        <h3 class="story-title">{{ item.title }}</h3>
+                        {% if item.author %}
+                        <div class="story-author">by {{ item.author }}</div>
+                        {% endif %}
+                        <div class="story-code">Code: {{ item.name }}</div>
+                        {% if item.description %}
+                        <div class="story-description">{{ item.description }}</div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <!-- Default tile format for other datasets -->
                     <h3>{{ item.name }}</h3>
                     <div class="item-preview">{{ item.preview }}</div>
                     <div class="item-meta">
@@ -225,6 +278,7 @@
                         <div class="collection-badge">{{ item.collection_name }}</div>
                         {% endif %}
                     </div>
+                    {% endif %}
                 </a>
                 {% endfor %}
             </div>
