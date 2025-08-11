@@ -52,21 +52,25 @@ echo '{"test": "data", "timestamp": "2024-01-15"}' > outputs/summaries/test-coll
 
 ### 4. Deploy to Railway
 ```bash
-# Set environment variables in Railway dashboard under "Variables":
-# PROTECTED_CONTENT_USERNAME=researcher
-# PROTECTED_CONTENT_PASSWORD_HASH=your-bcrypt-hash-from-step-1
-# PROTECTED_DATASETS=detectiveqa,booookscore
+# Use the deploy script (sets environment variables first, then deploys)
+./deploy-railway.sh
 
-# Deploy the application
-git add .
-git commit -m "Deploy with authentication"
-railway up
+# Alternative manual method:
+# 1. Set variables: railway variables set PROTECTED_CONTENT_USERNAME=researcher
+# 2. Set password hash: railway variables set PROTECTED_CONTENT_PASSWORD_HASH=your-hash
+# 3. Set datasets: railway variables set PROTECTED_DATASETS=detectiveqa,booookscore  
+# 4. Deploy: railway up
+# 
+# ⚠️  CRITICAL: Railway environment variables are applied during deployment.
+# If you change variables after deployment, run `railway redeploy` to apply them.
 
 # Start syncing files to Railway (optional)
 cd watcher
 ./sync.sh server    # Syncs files to Railway only
 ./sync.sh both      # Syncs to both local and Railway
 ```
+
+**Railway Architecture**: Railway runs both Express (port $PORT) + FastAPI (port 8000) for consistency with local development. The `nixpacks.toml` configures both Node.js and Python environments, and `start-services.sh` manages both processes.
 
 ## Architecture
 
@@ -88,6 +92,33 @@ Projects/
     ├── watcher/                  ← File monitoring service
     └── railway-app/              ← Web dashboard
 ```
+
+## File Reference
+
+### Core Application Files
+- **`server.js`** - Express proxy server with HTTP Basic Auth for protected content
+- **`railway-app/main.py`** - FastAPI backend serving the dashboard and API endpoints
+- **`package.json`** / **`package-lock.json`** - Node.js dependencies for Express server
+
+### Deployment & Configuration
+- **`deploy-railway.sh`** - One-command Railway deployment (sets env vars + deploys)
+- **`nixpacks.toml`** - Railway build configuration (Node.js + Python environments)
+- **`railway.toml`** - Railway deployment settings (start command, health checks, volumes)
+- **`start-services.sh`** - Startup script for Railway (starts FastAPI + Express)
+
+### Development Tools  
+- **`generate-password.js`** - Utility to generate bcrypt hashes for authentication
+- **`watcher/sync.sh`** - Local development script (starts services + file watcher)
+
+### File Monitoring System
+- **`watcher/main.py`** - File watcher service (monitors local files, uploads changes)
+- **`watcher/upload_all.py`** - Bulk upload script for existing files
+- **`watcher/sync_deletions.py`** - Cleanup script for orphaned files on servers
+- **`watcher/config.py`** - Configuration for target URLs and sync settings
+
+### Documentation
+- **`README.md`** - Main setup and usage documentation
+- **`auth-setup.md`** - Detailed authentication system documentation
 
 ### Authentication System
 

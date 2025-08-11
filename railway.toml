@@ -10,8 +10,5 @@ healthcheckTimeout = 300
 mountPath = "/data"
 name = "dashboard-data"
 
-[environments.production]
-variables = { }
-
 [environments.development]
 variables = { }

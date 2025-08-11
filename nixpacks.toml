@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs_18", "python310", "python310Packages.pip"]
+
+[phases.install]
+cmds = [
+    "npm install",
+    "pip install --break-system-packages -r requirements.txt"
+]
+
+[start]
+cmd = "./start-services.sh"
