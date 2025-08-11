@@ -35,7 +35,7 @@
         .header-content {
             display: flex;
             align-items: center;
-            gap: 16px;
+            justify-content: space-between;
             margin-bottom: 12px;
         }
 
@@ -472,26 +472,22 @@
     <header class="header">
         <div class="container">
             <div class="header-content">
-                <a href="/{{ dataset }}/{{ subcollection }}" class="back-button">← Back to {{ subcollection | replace("_", " ") | title }}</a>
-                <div>
-                    <h1>{{ item.name }}</h1>
+                <div class="breadcrumb">
+                    <a href="/">Dashboard</a> › 
+                    <a href="/{{ dataset }}">{{ dataset | upper }}</a> › 
+                    <a href="/{{ dataset }}/{{ subcollection }}">{{ subcollection | replace("_", " ") | title }}</a> › 
+                    {{ item.name }}
                 </div>
-            </div>
-            <div class="breadcrumb">
-                <a href="/">Dashboard</a> › 
-                <a href="/{{ dataset }}">{{ dataset | upper }}</a> › 
-                <a href="/{{ dataset }}/{{ subcollection }}">{{ subcollection | replace("_", " ") | title }}</a> › 
-                {{ item.name }}
+                <div class="controls">
+                    <button class="control-button" onclick="expandAll()">Expand All</button>
+                    <button class="control-button" onclick="collapseAll()">Collapse All</button>
+                </div>
             </div>
         </div>
     </header>
 
     <main class="main-content">
         <div class="container">
-            <div class="controls">
-                <button class="control-button" onclick="expandAll()">Expand All</button>
-                <button class="control-button" onclick="collapseAll()">Collapse All</button>
-            </div>
 
             <!-- Story Information -->
             {% if item.story_info and item.story_info.title %}
