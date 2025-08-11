@@ -188,7 +188,7 @@ cd watcher
 cd watcher
 python upload_all.py --target local                    # Upload all files locally
 python upload_all.py --target server --password pwd    # Upload to Railway with auth
-python upload_all.py --target both                     # Upload to both targets
+python upload_all.py --target both --password pwd      # Upload to both targets with auth
 ```
 
 ### Sync Deletions (`sync_deletions.py`)
@@ -196,14 +196,15 @@ python upload_all.py --target both                     # Upload to both targets
 ```bash
 cd watcher
 python sync_deletions.py --target local --dry-run      # Preview deletions
-python sync_deletions.py --target local                # Delete orphaned files
-python sync_deletions.py --target both --password pwd  # Clean both targets
+python sync_deletions.py --target local                # Delete orphaned files locally
+python sync_deletions.py --target both --password pwd  # Clean both targets with auth
 ```
 
-**Authentication Notes:**
-- Password only required for **protected datasets** (`detectiveqa`, `booookscore`)
-- Unprotected datasets (`bmds`, `squality`) work without authentication
-- Scripts will prompt for password if needed and not provided via `--password`
+**⚠️ IMPORTANT - Authentication Required:**
+- **MUST provide `--password`** when using `--target server` or `--target both`
+- **MUST provide `--password`** if ANY protected datasets exist (`detectiveqa`, `booookscore`)
+- Scripts will **FAIL with 401 errors** if password not provided for protected content
+- Use `--password your-password` or scripts will prompt interactively
 
 ### Bulk Upload Existing Files
 If you need to upload all existing files (useful for initial setup or after changes):
