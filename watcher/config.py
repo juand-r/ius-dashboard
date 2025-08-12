@@ -27,8 +27,8 @@ WATCHED_DIRS = [
     "outputs/chunks",
     "outputs/summaries", 
     "prompts",
-    "summaries-claims",
-    "eval"
+    "outputs/summaries-claims",
+    "outputs/eval"
 ]
 
 # Debounce time to wait after file changes before uploading (seconds)
