@@ -26,7 +26,9 @@ def get_target_urls(target):
 WATCHED_DIRS = [
     "outputs/chunks",
     "outputs/summaries", 
-    "prompts"
+    "prompts",
+    "summaries-chunks",
+    "eval"
 ]
 
 # Debounce time to wait after file changes before uploading (seconds)
