@@ -51,7 +51,7 @@ def get_dataset_info(dataset_name: str):
     config = DATASET_CONFIG.get(dataset_name, {})
     return {
         "display_name": config.get("display_name", dataset_name.upper()),
-        "description": config.get("description", "MISSING DESCRIPTION")
+        "description": config.get("description", "MISSING DESCRIPTION"f"{dataset_name.upper()} dataset stories and analysis")
     }
 
 # Setup templates and static files
@@ -458,6 +458,13 @@ async def get_collection_items(dataset: str, subcollection: str = None):
                                             question_texts.append(q["question"])
                                     description = " ".join(question_texts)
                             
+                            elif dataset == "squality":
+                                doc_meta = content.get("documents", [{}])[0].get("metadata", {}).get("original_metadata", {}) if content.get("documents") else {}
+                                
+                                title = doc_meta.get("title", "")
+                                author = doc_meta.get("author", "")
+                                # No description for squality as requested
+                            
                             # Truncate description to 192 characters
                             if description and len(description) > 192:
                                 description = description[:192] + "..."
@@ -676,6 +683,22 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                 "publication_year": ""  # No publication year in detectiveqa
             }
         
+        # Extract squality-specific metadata
+        elif dataset == "squality":
+            doc_meta = content.get("documents", [{}])[0].get("metadata", {}).get("original_metadata", {}) if content.get("documents") else {}
+            
+            # Extract title and author
+            title = doc_meta.get("title", "")
+            author = doc_meta.get("author", "")
+            
+            # Create story info for squality (no plot summary as requested)
+            story_info = {
+                "title": title,
+                "plot_summary": "",  # No description for squality as requested
+                "author": author,
+                "publication_year": ""  # No publication year in squality
+            }
+        
         # Try to load summary data from all matching collections
         summary_data = []
         summaries_dir = DATA_DIR / "outputs" / "summaries"
@@ -800,7 +823,7 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
             "content": content.get("content", ""),
             "chunk_metadata": chunk_metadata,
             "crimes_metadata": crimes_metadata,
-            "story_info": story_info if dataset in ["bmds", "detectiveqa"] else {},
+            "story_info": story_info if dataset in ["bmds", "detectiveqa", "squality"] else {},
             "full_content": content,
             "summary_data": summary_data,  # New field for summaries
             "grouped_summaries": grouped_summaries,  # Hierarchical grouping

@@ -250,8 +250,8 @@
             <div class="items-grid" id="items-grid">
                 {% for item in items %}
                 <a href="/{{ dataset }}/{{ subcollection }}/item/{{ item.id }}" class="item-card">
-                    {% if dataset in ["bmds", "detectiveqa"] and item.title %}
-                    <!-- Rich tile format for bmds and detectiveqa -->
+                    {% if dataset in ["bmds", "detectiveqa", "squality"] and item.title %}
+                    <!-- Rich tile format for bmds, detectiveqa, and squality -->
                     <div class="rich-tile">
                         <h3 class="story-title">{{ item.title }}</h3>
                         {% if item.author %}
