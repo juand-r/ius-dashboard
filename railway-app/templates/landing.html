@@ -20,7 +20,7 @@
         }
 
         .header {
-            background: white;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
             border-bottom: 1px solid #e2e8f0;
             padding: 20px 0;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
@@ -35,12 +35,13 @@
         .header h1 {
             font-size: 28px;
             font-weight: 700;
-            color: #1e293b;
+            color: white;
             margin-bottom: 8px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .header p {
-            color: #64748b;
+            color: rgba(255, 255, 255, 0.9);
             font-size: 16px;
         }
 
@@ -74,11 +75,56 @@
             transform: translateY(-2px);
         }
 
+        .dataset-card-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .dataset-initial {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        /* Different colors for each dataset initial */
+        .dataset-card:nth-child(1) .dataset-initial {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .dataset-card:nth-child(2) .dataset-initial {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .dataset-card:nth-child(3) .dataset-initial {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .dataset-card:nth-child(4) .dataset-initial {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+        .dataset-card:nth-child(5) .dataset-initial {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+        }
+
+        .dataset-card:nth-child(6) .dataset-initial {
+            background: linear-gradient(135deg, #ec4899, #db2777);
+        }
+
         .dataset-card h2 {
             font-size: 24px;
             font-weight: 600;
             color: #1e293b;
-            margin-bottom: 12px;
+            margin: 0;
         }
 
         .dataset-card p {
@@ -129,7 +175,10 @@
             <div class="datasets-grid">
                 {% for dataset in collections %}
                 <a href="{{ dataset.path }}" class="dataset-card">
-                    <h2>{{ dataset.display_name }}</h2>
+                    <div class="dataset-card-header">
+                        <div class="dataset-initial">{{ dataset.display_name[0] }}</div>
+                        <h2>{{ dataset.display_name }}</h2>
+                    </div>
                     <p>{{ dataset.description }}</p>
                     <div class="dataset-stats">
                         <div class="stat">

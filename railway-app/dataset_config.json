@@ -1,0 +1,18 @@
+{
+  "bmds": {
+    "display_name": "BMDS",
+    "description": "Collection of \"solvable\" detective stories from the Birth of the Modern Detective Story (BMDS) dataset (https://github.com/ahmmnd/BMDS)"
+  },
+  "detectiveqa": {
+    "display_name": "DetectiveQA", 
+    "description": "Subset of the DetectiveQA dataset of full-length detective novels (https://github.com/Phospheneser/DetectiveQA)"
+  },
+  "squality": {
+    "display_name": "SQuALITY",
+    "description": "All sci-fi stories from the SQuALITY dataset (https://huggingface.co/datasets/pszemraj/SQuALITY-v1.3/)"
+  },
+  "booookscore": {
+    "display_name": "BooookScore",
+    "description": "All books from the BooookScore dataset (https://github.com/lilakk/BooookScore)"
+  }
+}

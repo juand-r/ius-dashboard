@@ -33,6 +33,27 @@ if not DATA_DIR.exists():
 
 logger.info(f"Using data directory: {DATA_DIR}")
 
+def load_dataset_config():
+    """Load dataset configuration from JSON file."""
+    config_path = Path(__file__).parent / "dataset_config.json"
+    try:
+        with open(config_path, 'r') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        logger.warning(f"Could not load dataset config: {e}")
+        return {}
+
+# Load dataset configuration
+DATASET_CONFIG = load_dataset_config()
+
+def get_dataset_info(dataset_name: str):
+    """Get dataset display name and description from config."""
+    config = DATASET_CONFIG.get(dataset_name, {})
+    return {
+        "display_name": config.get("display_name", dataset_name.upper()),
+        "description": config.get("description", "MISSING DESCRIPTION")
+    }
+
 # Setup templates and static files
 templates = Jinja2Templates(directory="templates")
 
@@ -322,10 +343,11 @@ async def get_collections():
                 dataset_name = collection_dir.name.split('_')[0]
                 
                 if dataset_name not in datasets:
+                    dataset_info = get_dataset_info(dataset_name)
                     datasets[dataset_name] = {
                         "name": dataset_name,
-                        "display_name": dataset_name.upper(),
-                        "description": f"{dataset_name.upper()} dataset stories and analysis",
+                        "display_name": dataset_info["display_name"],
+                        "description": dataset_info["description"],
                         "count": 0,
                         "path": f"/{dataset_name}"
                     }
@@ -343,10 +365,11 @@ async def get_collections():
 
 async def get_collection_info(dataset: str):
     """Get dataset metadata."""
+    dataset_info = get_dataset_info(dataset)
     return {
         "name": dataset,
-        "display_name": dataset.upper(),
-        "description": f"{dataset.upper()} dataset stories and analysis"
+        "display_name": dataset_info["display_name"],
+        "description": dataset_info["description"]
     }
 
 async def get_dataset_subcollections(dataset: str):

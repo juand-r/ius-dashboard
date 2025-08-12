@@ -27,7 +27,7 @@ WATCHED_DIRS = [
     "outputs/chunks",
     "outputs/summaries", 
     "prompts",
-    "summaries-chunks",
+    "summaries-claims",
     "eval"
 ]
 
