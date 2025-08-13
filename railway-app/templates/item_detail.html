@@ -694,6 +694,164 @@
             line-height: 1.6;
             color: #475569;
         }
+
+        /* Whodunit Evaluation Styles */
+        .eval-results {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .eval-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .eval-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .eval-model {
+            font-weight: 600;
+            color: #374151;
+            background: #e5e7eb;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .eval-score {
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .eval-score.correct {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .eval-score.incorrect {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .eval-content {
+            color: #374151;
+            line-height: 1.5;
+        }
+
+        .eval-content strong {
+            color: #1f2937;
+        }
+
+                        .eval-input-type {
+                    font-size: 12px;
+                    color: #6b7280;
+                    font-weight: normal;
+                    margin-left: 8px;
+                }
+
+                /* Truth boxes styles */
+                .truth-box {
+                    position: relative;
+                    margin: 12px 0;
+                    padding: 16px;
+                    border-radius: 8px;
+                    border: 2px solid;
+                }
+
+                .truth-box.ground-truth {
+                    background: #f0fdf4;
+                    border-color: #22c55e;
+                }
+
+                .truth-box.predictions {
+                    background: #fff7ed;
+                    border-color: #f97316;
+                }
+
+                .truth-label {
+                    position: absolute;
+                    top: -8px;
+                    left: 12px;
+                    background: white;
+                    padding: 2px 8px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
+
+                .ground-truth .truth-label {
+                    color: #22c55e;
+                }
+
+                .predictions .truth-label {
+                    color: #f97316;
+                }
+
+                .truth-content {
+                    color: #374151;
+                    line-height: 1.5;
+                }
+
+                /* Analysis dropdowns styles */
+                .analysis-dropdowns {
+                    margin-top: 16px;
+                }
+
+                .analysis-dropdown {
+                    margin: 8px 0;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 6px;
+                }
+
+                .analysis-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 8px 12px;
+                    background: #f9fafb;
+                    cursor: pointer;
+                    border-radius: 6px 6px 0 0;
+                }
+
+                .analysis-header:hover {
+                    background: #f3f4f6;
+                }
+
+                .analysis-title {
+                    font-size: 13px;
+                    font-weight: 500;
+                    color: #374151;
+                }
+
+                .analysis-content {
+                    padding: 12px;
+                    background: white;
+                    border-radius: 0 0 6px 6px;
+                    font-size: 14px;
+                    line-height: 1.5;
+                    color: #374151;
+                }
+
+                .analysis-content pre {
+                    white-space: pre-wrap;
+                    word-wrap: break-word;
+                    margin: 0;
+                    font-family: inherit;
+                }
+
+                .analysis-content.collapsed {
+                    display: none;
+                }
     </style>
 </head>
 <body>
@@ -1135,6 +1293,124 @@
                                 </div>
                             </div>
                             {% endfor %}
+                            
+                            <!-- Whodunit Evaluations (BMDS only, chunks input type) -->
+                            {% if dataset == "bmds" and item.eval_data %}
+                                {% for eval in item.eval_data %}
+                                    {% if eval.input_type == "chunks" %}
+                                    <div class="collapsible-section" style="margin-top: 20px; border: 1px solid #e5e7eb;">
+                                        <div class="section-header" onclick="toggleSection('whodunit-eval-{{ loop.index }}')">
+                                            <div class="section-header-left">
+                                                <span class="section-icon">🔍</span>
+                                                <span class="section-title">Whodunit Evaluation</span>
+                                                <span class="eval-input-type">(input: {{ eval.input_type }})</span>
+                                            </div>
+                                            <span class="toggle-icon" id="whodunit-eval-{{ loop.index }}-icon">▶</span>
+                                        </div>
+                                        <div class="section-content collapsed" id="whodunit-eval-{{ loop.index }}">
+                                            <!-- Config dropdown -->
+                                            <div class="collapsible-section" style="margin-bottom: 16px; border: 1px solid #d1d5db;">
+                                                <div class="section-header" onclick="toggleSection('eval-config-{{ loop.index }}')">
+                                                    <div class="section-header-left">
+                                                        <span class="section-icon">⚙️</span>
+                                                        <span class="section-title">Config</span>
+                                                    </div>
+                                                    <span class="toggle-icon" id="eval-config-{{ loop.index }}-icon">▶</span>
+                                                </div>
+                                                <div class="section-content collapsed" id="eval-config-{{ loop.index }}">
+                                                    <div class="config-grid">
+                                                        <div class="config-item"><strong>Model:</strong> {{ eval.model }}</div>
+                                                        <div class="config-item"><strong>Selected Range:</strong> {{ eval.selected_range }}</div>
+                                                        <div class="config-item"><strong>Prompt:</strong> {{ eval.prompt_name }}</div>
+                                                        <div class="config-item"><strong>Input Type:</strong> {{ eval.input_type }}</div>
+                                                        <div class="config-item"><strong>Collection:</strong> {{ eval.collection_name }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Evaluation results -->
+                                            <div class="eval-results">
+                                                <div class="eval-item">
+                                                    <div class="eval-header">
+                                                        <span class="eval-model">{{ eval.model }}</span>
+                                                        <span class="eval-score {% if eval.culprit_correct == 'Yes' %}correct{% else %}incorrect{% endif %}">
+                                                            {% if eval.culprit_correct == "Yes" %}✓ Correct{% else %}✗ Incorrect{% endif %}
+                                                        </span>
+                                                    </div>
+                                                    <div class="eval-content">
+                                                        <!-- Ground Truth Box -->
+                                                        <div class="truth-box ground-truth">
+                                                            <div class="truth-label">Ground Truth</div>
+                                                            <div class="truth-content">
+                                                                <strong>Culprits:</strong> {{ eval.full_eval_data.ground_truth.culprits }}<br>
+                                                                <strong>Accomplices:</strong> {{ eval.full_eval_data.ground_truth.accomplices }}
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Predictions Box -->
+                                                        <div class="truth-box predictions">
+                                                            <div class="truth-label">Predicted</div>
+                                                            <div class="truth-content">
+                                                                <strong>Culprits:</strong> {{ eval.predicted_culprit }}<br>
+                                                                <strong>Accomplices:</strong> {{ eval.predicted_accomplice }}
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Detailed Analysis Dropdowns -->
+                                                        <div class="analysis-dropdowns">
+                                                            <!-- Suspects -->
+                                                            <div class="analysis-dropdown">
+                                                                <div class="analysis-header" onclick="toggleSection('eval-suspects-{{ loop.index }}')">
+                                                                    <span class="analysis-title">Suspects</span>
+                                                                    <span class="toggle-icon" id="eval-suspects-{{ loop.index }}-icon">▶</span>
+                                                                </div>
+                                                                <div class="analysis-content collapsed" id="eval-suspects-{{ loop.index }}">
+                                                                    {{ eval.full_eval_data.parsed_response.suspects }}
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Thought Process -->
+                                                            <div class="analysis-dropdown">
+                                                                <div class="analysis-header" onclick="toggleSection('eval-thought-{{ loop.index }}')">
+                                                                    <span class="analysis-title">Thought Process</span>
+                                                                    <span class="toggle-icon" id="eval-thought-{{ loop.index }}-icon">▶</span>
+                                                                </div>
+                                                                <div class="analysis-content collapsed" id="eval-thought-{{ loop.index }}">
+                                                                    <pre class="thought-process">{{ eval.full_eval_data.parsed_response.thought_process }}</pre>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Event Reconstruction -->
+                                                            <div class="analysis-dropdown">
+                                                                <div class="analysis-header" onclick="toggleSection('eval-events-{{ loop.index }}')">
+                                                                    <span class="analysis-title">Event Reconstruction</span>
+                                                                    <span class="toggle-icon" id="eval-events-{{ loop.index }}-icon">▶</span>
+                                                                </div>
+                                                                <div class="analysis-content collapsed" id="eval-events-{{ loop.index }}">
+                                                                    <pre class="event-reconstruction">{{ eval.full_eval_data.parsed_response.event_reconstruction }}</pre>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Why Others Are Innocent -->
+                                                            <div class="analysis-dropdown">
+                                                                <div class="analysis-header" onclick="toggleSection('eval-innocent-{{ loop.index }}')">
+                                                                    <span class="analysis-title">Why Others Are Innocent</span>
+                                                                    <span class="toggle-icon" id="eval-innocent-{{ loop.index }}-icon">▶</span>
+                                                                </div>
+                                                                <div class="analysis-content collapsed" id="eval-innocent-{{ loop.index }}">
+                                                                    <pre class="why-innocent">{{ eval.full_eval_data.parsed_response.why_others_innocent }}</pre>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                            
                             {% else %}
                             <!-- Fallback if no chunks available -->
                             <div class="content-block">{{ item.content }}</div>
@@ -1246,6 +1522,123 @@
                                 </div>
                             </div>
                             {% endfor %}
+                            
+                            <!-- Whodunit Evaluations for this summary collection -->
+                            {% if dataset == "bmds" and item.eval_data %}
+                                {% for eval in item.eval_data %}
+                                    {% if eval.input_type == "summaries" and collection.collection_name in eval.source_collection %}
+                                    <div class="collapsible-section" style="margin-top: 16px; border: 1px solid #e5e7eb;">
+                                        <div class="section-header" onclick="toggleSection('summary-whodunit-eval-{{ outer_loop_index }}-{{ loop.index }}')">
+                                            <div class="section-header-left">
+                                                <span class="section-icon">🔍</span>
+                                                <span class="section-title">Whodunit Evaluation</span>
+                                                <span class="eval-input-type">(input: {{ eval.input_type }})</span>
+                                            </div>
+                                            <span class="toggle-icon" id="summary-whodunit-eval-{{ outer_loop_index }}-{{ loop.index }}-icon">▶</span>
+                                        </div>
+                                        <div class="section-content collapsed" id="summary-whodunit-eval-{{ outer_loop_index }}-{{ loop.index }}">
+                                            <!-- Config dropdown -->
+                                            <div class="collapsible-section" style="margin-bottom: 16px; border: 1px solid #d1d5db;">
+                                                <div class="section-header" onclick="toggleSection('summary-eval-config-{{ outer_loop_index }}-{{ loop.index }}')">
+                                                    <div class="section-header-left">
+                                                        <span class="section-icon">⚙️</span>
+                                                        <span class="section-title">Config</span>
+                                                    </div>
+                                                    <span class="toggle-icon" id="summary-eval-config-{{ outer_loop_index }}-{{ loop.index }}-icon">▶</span>
+                                                </div>
+                                                <div class="section-content collapsed" id="summary-eval-config-{{ outer_loop_index }}-{{ loop.index }}">
+                                                                                                                <div class="config-grid">
+                                                                <div class="config-item"><strong>Model:</strong> {{ eval.model }}</div>
+                                                                <div class="config-item"><strong>Selected Range:</strong> {{ eval.selected_range }}</div>
+                                                                <div class="config-item"><strong>Prompt:</strong> {{ eval.prompt_name }}</div>
+                                                                <div class="config-item"><strong>Input Type:</strong> {{ eval.input_type }}</div>
+                                                                <div class="config-item"><strong>Source Collection:</strong> {{ collection.collection_name }}</div>
+                                                            </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Evaluation results -->
+                                            <div class="eval-results">
+                                                <div class="eval-item">
+                                                    <div class="eval-header">
+                                                        <span class="eval-model">{{ eval.model }}</span>
+                                                        <span class="eval-score {% if eval.culprit_correct == 'Yes' %}correct{% else %}incorrect{% endif %}">
+                                                            {% if eval.culprit_correct == "Yes" %}✓ Correct{% else %}✗ Incorrect{% endif %}
+                                                        </span>
+                                                    </div>
+                                                    <div class="eval-content">
+                                                        <!-- Ground Truth Box -->
+                                                        <div class="truth-box ground-truth">
+                                                            <div class="truth-label">Ground Truth</div>
+                                                            <div class="truth-content">
+                                                                <strong>Culprits:</strong> {{ eval.full_eval_data.ground_truth.culprits }}<br>
+                                                                <strong>Accomplices:</strong> {{ eval.full_eval_data.ground_truth.accomplices }}
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Predictions Box -->
+                                                        <div class="truth-box predictions">
+                                                            <div class="truth-label">Predicted</div>
+                                                            <div class="truth-content">
+                                                                <strong>Culprits:</strong> {{ eval.predicted_culprit }}<br>
+                                                                <strong>Accomplices:</strong> {{ eval.predicted_accomplice }}
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Detailed Analysis Dropdowns -->
+                                                        <div class="analysis-dropdowns">
+                                                            <!-- Suspects -->
+                                                            <div class="analysis-dropdown">
+                                                                <div class="analysis-header" onclick="toggleSection('eval-suspects-{{ loop.index }}')">
+                                                                    <span class="analysis-title">Suspects</span>
+                                                                    <span class="toggle-icon" id="eval-suspects-{{ loop.index }}-icon">▶</span>
+                                                                </div>
+                                                                <div class="analysis-content collapsed" id="eval-suspects-{{ loop.index }}">
+                                                                    {{ eval.full_eval_data.parsed_response.suspects }}
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Thought Process -->
+                                                            <div class="analysis-dropdown">
+                                                                <div class="analysis-header" onclick="toggleSection('eval-thought-{{ loop.index }}')">
+                                                                    <span class="analysis-title">Thought Process</span>
+                                                                    <span class="toggle-icon" id="eval-thought-{{ loop.index }}-icon">▶</span>
+                                                                </div>
+                                                                <div class="analysis-content collapsed" id="eval-thought-{{ loop.index }}">
+                                                                    <pre class="thought-process">{{ eval.full_eval_data.parsed_response.thought_process }}</pre>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Event Reconstruction -->
+                                                            <div class="analysis-dropdown">
+                                                                <div class="analysis-header" onclick="toggleSection('eval-events-{{ loop.index }}')">
+                                                                    <span class="analysis-title">Event Reconstruction</span>
+                                                                    <span class="toggle-icon" id="eval-events-{{ loop.index }}-icon">▶</span>
+                                                                </div>
+                                                                <div class="analysis-content collapsed" id="eval-events-{{ loop.index }}">
+                                                                    <pre class="event-reconstruction">{{ eval.full_eval_data.parsed_response.event_reconstruction }}</pre>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Why Others Are Innocent -->
+                                                            <div class="analysis-dropdown">
+                                                                <div class="analysis-header" onclick="toggleSection('eval-innocent-{{ loop.index }}')">
+                                                                    <span class="analysis-title">Why Others Are Innocent</span>
+                                                                    <span class="toggle-icon" id="eval-innocent-{{ loop.index }}-icon">▶</span>
+                                                                </div>
+                                                                <div class="analysis-content collapsed" id="eval-innocent-{{ loop.index }}">
+                                                                    <pre class="why-innocent">{{ eval.full_eval_data.parsed_response.why_others_innocent }}</pre>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}

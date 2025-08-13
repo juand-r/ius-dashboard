@@ -699,6 +699,40 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                 "publication_year": ""  # No publication year in squality
             }
         
+        # Try to load eval data for BMDS items
+        eval_data = []
+        if dataset == "bmds":
+            eval_dir = DATA_DIR / "outputs" / "eval" / "extrinsic"
+            if eval_dir.exists():
+                for eval_collection_dir in eval_dir.iterdir():
+                    if eval_collection_dir.is_dir() and "whodunit" in eval_collection_dir.name:
+                        eval_items_dir = eval_collection_dir / "items"
+                        eval_item_file = eval_items_dir / f"{item_id}.json"
+                        if eval_item_file.exists():
+                            try:
+                                with open(eval_item_file, 'r') as f:
+                                    eval_content = json.load(f)
+                                
+                                # Extract key evaluation metadata
+                                eval_info = {
+                                    "collection_name": eval_collection_dir.name,
+                                    "input_type": eval_content.get("item_metadata", {}).get("input_type", "unknown"),
+                                    "selected_range": eval_content.get("item_metadata", {}).get("selected_range", "unknown"),
+                                    "model": eval_content.get("evaluation_metadata", {}).get("model", "unknown"),
+                                    "prompt_name": eval_content.get("evaluation_metadata", {}).get("prompt_name", "unknown"),
+                                    "culprit_correct": eval_content.get("solution_correctness_assessment", {}).get("culprit", {}).get("culprit_correct", "unknown"),
+                                    "accomplice_correct": eval_content.get("solution_correctness_assessment", {}).get("accomplice", {}).get("accomplice_correct", "unknown"),
+                                    "predicted_culprit": eval_content.get("parsed_response", {}).get("main_culprits", "unknown"),
+                                    "predicted_accomplice": eval_content.get("parsed_response", {}).get("accomplices", "unknown"),
+                                    "reasoning": eval_content.get("parsed_response", {}).get("thought_process", "")[:500] + "..." if len(eval_content.get("parsed_response", {}).get("thought_process", "")) > 500 else eval_content.get("parsed_response", {}).get("thought_process", ""),
+                                    "source_collection": eval_content.get("evaluation_metadata", {}).get("command_run", ""),
+                                    "full_eval_data": eval_content
+                                }
+                                eval_data.append(eval_info)
+                            except Exception as e:
+                                logger.error(f"Error reading eval file {eval_item_file}: {e}")
+                                continue
+
         # Try to load summary data from all matching collections
         summary_data = []
         summaries_dir = DATA_DIR / "outputs" / "summaries"
@@ -827,6 +861,7 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
             "full_content": content,
             "summary_data": summary_data,  # New field for summaries
             "grouped_summaries": grouped_summaries,  # Hierarchical grouping
+            "eval_data": eval_data,  # New field for evaluations
             "file_size": item_file.stat().st_size,
             "modified": datetime.fromtimestamp(item_file.stat().st_mtime).isoformat()
         }
