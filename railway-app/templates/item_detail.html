@@ -852,6 +852,41 @@
                 .analysis-content.collapsed {
                     display: none;
                 }
+
+                /* Scoring section styles */
+                .scoring-section {
+                    margin-bottom: 20px;
+                }
+
+                .scoring-section h4 {
+                    margin: 0 0 8px 0;
+                    color: #374151;
+                    font-size: 14px;
+                    font-weight: 600;
+                }
+
+                .error-list {
+                    margin: 8px 0 0 0;
+                    padding-left: 20px;
+                    list-style: none;
+                }
+
+                .error-list li {
+                    margin: 4px 0;
+                    font-size: 13px;
+                    color: #4b5563;
+                    line-height: 1.4;
+                }
+
+                .error-list li strong {
+                    color: #374151;
+                }
+
+                /* Error highlighting */
+                .error-yes {
+                    color: #dc2626 !important;
+                    font-weight: bold;
+                }
     </style>
 </head>
 <body>
@@ -1401,8 +1436,86 @@
                                                                     <pre class="why-innocent">{{ eval.full_eval_data.parsed_response.why_others_innocent }}</pre>
                                                                 </div>
                                                             </div>
+                                                            
+                                                            <!-- Scoring Section -->
+                                                            <div class="analysis-dropdown">
+                                                                <div class="analysis-header" onclick="toggleSection('eval-scoring-{{ loop.index }}')">
+                                                                    <span class="analysis-title">
+                                                                        Scoring 
+                                                                        <span class="prompt-link" onclick="event.stopPropagation(); showPromptPopover(event, 'scoring-{{ loop.index }}')">
+                                                                            (prompt)
+                                                                        </span>
+                                                                    </span>
+                                                                    <span class="toggle-icon" id="eval-scoring-{{ loop.index }}-icon">▶</span>
+                                                                </div>
+                                                                <div class="analysis-content collapsed" id="eval-scoring-{{ loop.index }}">
+                                                                    <!-- Culprit Scoring -->
+                                                                    <div class="scoring-section">
+                                                                        <h4>Culprit scoring:</h4>
+                                                                        {% if eval.culprit_correct == "Yes" %}
+                                                                            <strong>Minor errors</strong>
+                                                                            <ul class="error-list">
+                                                                                <li><strong>Missing alias:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.culprit_missing_alias == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.culprit_missing_alias }}</span></li>
+                                                                                <li><strong>Hallucinated part of name:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.hallucinated_part_of_name == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.hallucinated_part_of_name }}</span></li>
+                                                                                <li><strong>Missing part of name:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.missing_part_of_name == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.missing_part_of_name }}</span></li>
+                                                                                <li><strong>Included accomplice:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.included_accomplice == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.included_accomplice }}</span></li>
+                                                                            </ul>
+                                                                        {% else %}
+                                                                            <strong>Major errors</strong>
+                                                                            <ul class="error-list">
+                                                                                <li><strong>Different suspect (not accomplice):</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.different_suspect_not_accomplice == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.different_suspect_not_accomplice }}</span></li>
+                                                                                <li><strong>Confused/swapped culprit and accomplice:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.confused_swapped_culprit_and_accomplice == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.confused_swapped_culprit_and_accomplice }}</span></li>
+                                                                                <li><strong>Missing real name (only has alias):</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.missing_real_name_only_has_alias == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.missing_real_name_only_has_alias }}</span></li>
+                                                                                <li><strong>Included other non-accomplice suspects:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.included_other_non_accomplice_suspects == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.included_other_non_accomplice_suspects }}</span></li>
+                                                                            </ul>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                    
+                                                                    <!-- Accomplice Scoring -->
+                                                                    <div class="scoring-section">
+                                                                        <h4>Accomplice scoring:</h4>
+                                                                        {% if eval.accomplice_correct == "Yes" %}
+                                                                            <strong>Minor errors</strong>
+                                                                            <ul class="error-list">
+                                                                                <li><strong>Missing alias:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.accomplice_missing_alias == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.accomplice_missing_alias }}</span></li>
+                                                                                <li><strong>Hallucinated part of name:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.hallucinated_part_of_name == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.hallucinated_part_of_name }}</span></li>
+                                                                                <li><strong>Missing part of name:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.missing_part_of_name == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.missing_part_of_name }}</span></li>
+                                                                                <li><strong>Included culprit:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.included_culprit == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.included_culprit }}</span></li>
+                                                                            </ul>
+                                                                        {% else %}
+                                                                            <strong>Major errors</strong>
+                                                                            <ul class="error-list">
+                                                                                <li><strong>Different suspect (not culprit):</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.different_suspect_not_culprit == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.different_suspect_not_culprit }}</span></li>
+                                                                                <li><strong>Confused/swapped accomplice and culprit:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.confused_swapped_accomplice_and_culprit == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.confused_swapped_accomplice_and_culprit }}</span></li>
+                                                                                <li><strong>Missing real name (only has alias):</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.missing_real_name_only_has_alias == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.missing_real_name_only_has_alias }}</span></li>
+                                                                                <li><strong>Included other non-culprit suspects:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.included_other_non_culprit_suspects == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.included_other_non_culprit_suspects }}</span></li>
+                                                                            </ul>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Scoring Prompt Popover -->
+                                    <div class="prompt-popover" id="scoring-{{ loop.index }}-popover" style="display: none;">
+                                        <div class="prompt-popover-content">
+                                            <div class="prompt-popover-header">
+                                                <h3>Scoring Prompts</h3>
+                                                <button class="prompt-close" onclick="hidePromptPopover('scoring-{{ loop.index }}')">&times;</button>
+                                            </div>
+                                            <div class="prompt-popover-body">
+                                                <div class="prompt-section">
+                                                    <h4>System Prompt</h4>
+                                                    <pre class="prompt-content">{{ eval.full_eval_data.scoring_metadata.scoring_prompts_used.system }}</pre>
+                                                </div>
+                                                <div class="prompt-section">
+                                                    <h4>User Prompt</h4>
+                                                    <pre class="prompt-content">{{ eval.full_eval_data.scoring_metadata.scoring_prompts_used.user }}</pre>
                                                 </div>
                                             </div>
                                         </div>
@@ -1628,6 +1741,64 @@
                                                                 </div>
                                                                 <div class="analysis-content collapsed" id="eval-innocent-{{ loop.index }}">
                                                                     <pre class="why-innocent">{{ eval.full_eval_data.parsed_response.why_others_innocent }}</pre>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Scoring Section -->
+                                                            <div class="analysis-dropdown">
+                                                                <div class="analysis-header" onclick="toggleSection('eval-scoring-{{ loop.index }}')">
+                                                                    <span class="analysis-title">
+                                                                        Scoring 
+                                                                        <span class="prompt-link" onclick="event.stopPropagation(); showPromptPopover(event, 'scoring-{{ loop.index }}')">
+                                                                            (prompt)
+                                                                        </span>
+                                                                    </span>
+                                                                    <span class="toggle-icon" id="eval-scoring-{{ loop.index }}-icon">▶</span>
+                                                                </div>
+                                                                <div class="analysis-content collapsed" id="eval-scoring-{{ loop.index }}">
+                                                                    <!-- Culprit Scoring -->
+                                                                    <div class="scoring-section">
+                                                                        <h4>Culprit scoring:</h4>
+                                                                        {% if eval.culprit_correct == "Yes" %}
+                                                                            <strong>Minor errors</strong>
+                                                                            <ul class="error-list">
+                                                                                <li><strong>Missing alias:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.culprit_missing_alias == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.culprit_missing_alias }}</span></li>
+                                                                                <li><strong>Hallucinated part of name:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.hallucinated_part_of_name == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.hallucinated_part_of_name }}</span></li>
+                                                                                <li><strong>Missing part of name:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.missing_part_of_name == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.missing_part_of_name }}</span></li>
+                                                                                <li><strong>Included accomplice:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.included_accomplice == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.minor_errors.included_accomplice }}</span></li>
+                                                                            </ul>
+                                                                        {% else %}
+                                                                            <strong>Major errors</strong>
+                                                                            <ul class="error-list">
+                                                                                <li><strong>Different suspect (not accomplice):</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.different_suspect_not_accomplice == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.different_suspect_not_accomplice }}</span></li>
+                                                                                <li><strong>Confused/swapped culprit and accomplice:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.confused_swapped_culprit_and_accomplice == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.confused_swapped_culprit_and_accomplice }}</span></li>
+                                                                                <li><strong>Missing real name (only has alias):</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.missing_real_name_only_has_alias == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.missing_real_name_only_has_alias }}</span></li>
+                                                                                <li><strong>Included other non-accomplice suspects:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.included_other_non_accomplice_suspects == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.culprit.major_errors.included_other_non_accomplice_suspects }}</span></li>
+                                                                            </ul>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                    
+                                                                    <!-- Accomplice Scoring -->
+                                                                    <div class="scoring-section">
+                                                                        <h4>Accomplice scoring:</h4>
+                                                                        {% if eval.accomplice_correct == "Yes" %}
+                                                                            <strong>Minor errors</strong>
+                                                                            <ul class="error-list">
+                                                                                <li><strong>Missing alias:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.accomplice_missing_alias == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.accomplice_missing_alias }}</span></li>
+                                                                                <li><strong>Hallucinated part of name:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.hallucinated_part_of_name == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.hallucinated_part_of_name }}</span></li>
+                                                                                <li><strong>Missing part of name:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.missing_part_of_name == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.missing_part_of_name }}</span></li>
+                                                                                <li><strong>Included culprit:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.included_culprit == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.minor_errors.included_culprit }}</span></li>
+                                                                            </ul>
+                                                                        {% else %}
+                                                                            <strong>Major errors</strong>
+                                                                            <ul class="error-list">
+                                                                                <li><strong>Different suspect (not culprit):</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.different_suspect_not_culprit == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.different_suspect_not_culprit }}</span></li>
+                                                                                <li><strong>Confused/swapped accomplice and culprit:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.confused_swapped_accomplice_and_culprit == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.confused_swapped_accomplice_and_culprit }}</span></li>
+                                                                                <li><strong>Missing real name (only has alias):</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.missing_real_name_only_has_alias == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.missing_real_name_only_has_alias }}</span></li>
+                                                                                <li><strong>Included other non-culprit suspects:</strong> <span class="{% if eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.included_other_non_culprit_suspects == 'Yes' %}error-yes{% endif %}">{{ eval.full_eval_data.solution_correctness_assessment.accomplice.major_errors.included_other_non_culprit_suspects }}</span></li>
+                                                                            </ul>
+                                                                        {% endif %}
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
