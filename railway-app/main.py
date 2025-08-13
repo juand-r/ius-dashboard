@@ -230,13 +230,18 @@ async def delete_file(path: str):
         logger.error(f"Error deleting file {path}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to delete file")
 
-@app.get("/api/prompts/{prompt_name}")
-async def get_prompts(prompt_name: str):
-    """Get prompt files for a given prompt name."""
-    prompts_dir = DATA_DIR / "prompts" / "summarization" / prompt_name
+@app.get("/api/prompts/{prompt_type}/{prompt_name}")
+async def get_prompts(prompt_type: str, prompt_name: str):
+    """Get prompt files for a given prompt name and type."""
+    if prompt_type == "summarization":
+        prompts_dir = DATA_DIR / "prompts" / "summarization" / prompt_name
+    elif prompt_type == "extrinsic-eval":
+        prompts_dir = DATA_DIR / "prompts" / "extrinsic-eval" / prompt_name
+    else:
+        raise HTTPException(status_code=400, detail=f"Invalid prompt type '{prompt_type}'. Must be 'summarization' or 'extrinsic-eval'")
     
     if not prompts_dir.exists() or not prompts_dir.is_dir():
-        raise HTTPException(status_code=404, detail=f"Prompt directory '{prompt_name}' not found")
+        raise HTTPException(status_code=404, detail=f"Prompt directory '{prompt_name}' not found in {prompt_type}")
     
     try:
         prompts = []

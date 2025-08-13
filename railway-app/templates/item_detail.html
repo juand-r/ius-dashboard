@@ -768,8 +768,8 @@
                 }
 
                 .truth-box.ground-truth {
-                    background: #f0fdf4;
-                    border-color: #22c55e;
+                    background: #fffbeb;
+                    border-color: #f59e0b;
                 }
 
                 .truth-box.predictions {
@@ -790,7 +790,7 @@
                 }
 
                 .ground-truth .truth-label {
-                    color: #22c55e;
+                    color: #f59e0b;
                 }
 
                 .predictions .truth-label {
@@ -886,6 +886,48 @@
                 .error-yes {
                     color: #dc2626 !important;
                     font-weight: bold;
+                }
+
+                /* Scoring dropdown styling */
+                .scoring-dropdown .scoring-header {
+                    background: #fffbeb !important;
+                    border: 1px solid #f59e0b;
+                }
+
+                .scoring-dropdown .scoring-header:hover {
+                    background: #fef3c7 !important;
+                }
+
+                /* Config dropdown styling - make it smaller and thinner */
+                .eval-config-dropdown {
+                    margin-bottom: 12px !important;
+                }
+
+                .eval-config-dropdown .section-header {
+                    padding: 6px 12px !important;
+                    font-size: 12px !important;
+                }
+
+                .eval-config-dropdown .section-title {
+                    font-size: 12px !important;
+                    font-weight: 500 !important;
+                }
+
+                .eval-config-dropdown .section-icon {
+                    font-size: 12px !important;
+                }
+
+                .eval-config-dropdown .section-content {
+                    padding: 8px 12px !important;
+                }
+
+                .eval-config-dropdown .config-grid {
+                    gap: 6px !important;
+                }
+
+                .eval-config-dropdown .config-item {
+                    font-size: 12px !important;
+                    line-height: 1.3 !important;
                 }
     </style>
 </head>
@@ -1087,7 +1129,7 @@
                             {% for orig_collection in item.summary_data %}
                                 {% if orig_collection.collection_name == collection.collection_name %}
                                     <div class="sidebar-item child" 
-                                         onclick="toggleSummarySelection(this, {{ loop.index }})"
+                                         onclick="toggleSummarySelection(this, '{{ loop.index }}')"
                                          id="sidebar-item-concat-{{ loop.index }}"
                                          data-collection-index="{{ loop.index }}"
                                          data-collection-name="{{ collection.collection_name }}"
@@ -1123,7 +1165,7 @@
                             {% for orig_collection in item.summary_data %}
                                 {% if orig_collection.collection_name == collection.collection_name %}
                                     <div class="sidebar-item child" 
-                                         onclick="toggleSummarySelection(this, {{ loop.index }})"
+                                         onclick="toggleSummarySelection(this, '{{ loop.index }}')"
                                          id="sidebar-item-concat-final-{{ loop.index }}"
                                          data-collection-index="{{ loop.index }}"
                                          data-collection-name="{{ collection.collection_name }}"
@@ -1159,7 +1201,7 @@
                             {% for orig_collection in item.summary_data %}
                                 {% if orig_collection.collection_name == collection.collection_name %}
                                     <div class="sidebar-item child" 
-                                         onclick="toggleSummarySelection(this, {{ loop.index }})"
+                                         onclick="toggleSummarySelection(this, '{{ loop.index }}')"
                                          id="sidebar-item-iterative-{{ loop.index }}"
                                          data-collection-index="{{ loop.index }}"
                                          data-collection-name="{{ collection.collection_name }}"
@@ -1195,7 +1237,7 @@
                             {% for orig_collection in item.summary_data %}
                                 {% if orig_collection.collection_name == collection.collection_name %}
                                     <div class="sidebar-item child" 
-                                         onclick="toggleSummarySelection(this, {{ loop.index }})"
+                                         onclick="toggleSummarySelection(this, '{{ loop.index }}')"
                                          id="sidebar-item-incremental-{{ loop.index }}"
                                          data-collection-index="{{ loop.index }}"
                                          data-collection-name="{{ collection.collection_name }}"
@@ -1231,7 +1273,7 @@
                             {% for orig_collection in item.summary_data %}
                                 {% if orig_collection.collection_name == collection.collection_name %}
                                     <div class="sidebar-item child" 
-                                         onclick="toggleSummarySelection(this, {{ loop.index }})"
+                                         onclick="toggleSummarySelection(this, '{{ loop.index }}')"
                                          id="sidebar-item-independent-{{ loop.index }}"
                                          data-collection-index="{{ loop.index }}"
                                          data-collection-name="{{ collection.collection_name }}"
@@ -1267,7 +1309,7 @@
                             {% for orig_collection in item.summary_data %}
                                 {% if orig_collection.collection_name == collection.collection_name %}
                                     <div class="sidebar-item child" 
-                                         onclick="toggleSummarySelection(this, {{ loop.index }})"
+                                         onclick="toggleSummarySelection(this, '{{ loop.index }}')"
                                          id="sidebar-item-update-{{ loop.index }}"
                                          data-collection-index="{{ loop.index }}"
                                          data-collection-name="{{ collection.collection_name }}"
@@ -1331,20 +1373,20 @@
                             
                             <!-- Whodunit Evaluations (BMDS only, chunks input type) -->
                             {% if dataset == "bmds" and item.eval_data %}
+                                <hr style="margin: 24px 0; border: none; border-top: 2px solid #374151;">
                                 {% for eval in item.eval_data %}
                                     {% if eval.input_type == "chunks" %}
                                     <div class="collapsible-section" style="margin-top: 20px; border: 1px solid #e5e7eb;">
                                         <div class="section-header" onclick="toggleSection('whodunit-eval-{{ loop.index }}')">
                                             <div class="section-header-left">
                                                 <span class="section-icon">🔍</span>
-                                                <span class="section-title">Whodunit Evaluation</span>
-                                                <span class="eval-input-type">(input: {{ eval.input_type }})</span>
+                                                <span class="section-title">Whodunit Eval {% if eval.selected_range == "last" or eval.selected_range == "all" %}(Source){% else %}(Source-sleuth){% endif %}</span>
                                             </div>
                                             <span class="toggle-icon" id="whodunit-eval-{{ loop.index }}-icon">▶</span>
                                         </div>
                                         <div class="section-content collapsed" id="whodunit-eval-{{ loop.index }}">
                                             <!-- Config dropdown -->
-                                            <div class="collapsible-section" style="margin-bottom: 16px; border: 1px solid #d1d5db;">
+                                            <div class="collapsible-section eval-config-dropdown" style="border: 1px solid #d1d5db;">
                                                 <div class="section-header" onclick="toggleSection('eval-config-{{ loop.index }}')">
                                                     <div class="section-header-left">
                                                         <span class="section-icon">⚙️</span>
@@ -1356,7 +1398,7 @@
                                                     <div class="config-grid">
                                                         <div class="config-item"><strong>Model:</strong> {{ eval.model }}</div>
                                                         <div class="config-item"><strong>Selected Range:</strong> {{ eval.selected_range }}</div>
-                                                        <div class="config-item"><strong>Prompt:</strong> {{ eval.prompt_name }}</div>
+                                                        <div class="config-item"><strong>Prompt:</strong> <span class="prompt-hover" onclick="showPromptPopover(event, 'extrinsic-eval/{{ eval.prompt_name }}')">{{ eval.prompt_name }}</span></div>
                                                         <div class="config-item"><strong>Input Type:</strong> {{ eval.input_type }}</div>
                                                         <div class="config-item"><strong>Collection:</strong> {{ eval.collection_name }}</div>
                                                     </div>
@@ -1438,11 +1480,11 @@
                                                             </div>
                                                             
                                                             <!-- Scoring Section -->
-                                                            <div class="analysis-dropdown">
-                                                                <div class="analysis-header" onclick="toggleSection('eval-scoring-{{ loop.index }}')">
+                                                            <div class="analysis-dropdown scoring-dropdown">
+                                                                <div class="analysis-header scoring-header" onclick="toggleSection('eval-scoring-{{ loop.index }}')">
                                                                     <span class="analysis-title">
                                                                         Scoring 
-                                                                        <span class="prompt-link" onclick="event.stopPropagation(); showPromptPopover(event, 'scoring-{{ loop.index }}')">
+                                                                        <span class="prompt-hover" onclick="event.stopPropagation(); showPromptPopover(event, 'extrinsic-eval/whodunit-scoring-culprits-and-accomplices')">
                                                                             (prompt)
                                                                         </span>
                                                                     </span>
@@ -1500,26 +1542,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
-                                    <!-- Scoring Prompt Popover -->
-                                    <div class="prompt-popover" id="scoring-{{ loop.index }}-popover" style="display: none;">
-                                        <div class="prompt-popover-content">
-                                            <div class="prompt-popover-header">
-                                                <h3>Scoring Prompts</h3>
-                                                <button class="prompt-close" onclick="hidePromptPopover('scoring-{{ loop.index }}')">&times;</button>
-                                            </div>
-                                            <div class="prompt-popover-body">
-                                                <div class="prompt-section">
-                                                    <h4>System Prompt</h4>
-                                                    <pre class="prompt-content">{{ eval.full_eval_data.scoring_metadata.scoring_prompts_used.system }}</pre>
-                                                </div>
-                                                <div class="prompt-section">
-                                                    <h4>User Prompt</h4>
-                                                    <pre class="prompt-content">{{ eval.full_eval_data.scoring_metadata.scoring_prompts_used.user }}</pre>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+
                                     {% endif %}
                                 {% endfor %}
                             {% endif %}
@@ -1545,7 +1568,7 @@
                                     <span class="section-title">Summaries--{{ collection.strategy_name }}</span>
                                     {% if collection.config_metadata.inputs or collection.config_metadata.output or collection.config_metadata.length_constraint_display %}
                                     <div class="summary-subtitle">
-                                        {% if collection.config_metadata.inputs %}<strong>Inputs:</strong> {{ collection.config_metadata.inputs }}{% endif %}{% if collection.config_metadata.inputs and collection.config_metadata.output %} {% endif %}{% if collection.config_metadata.output %}<strong>Outputs:</strong> {{ collection.config_metadata.output }}{% endif %}{% if collection.config_metadata.length_constraint_display %} {{ collection.config_metadata.length_constraint_display }}{% endif %}{% if collection.config_metadata.prompts %} <span class="prompt-hover" onclick="event.stopPropagation(); showPromptPopover(event, '{{ collection.config_metadata.prompts }}')"><strong>Prompts</strong></span>{% endif %}
+                                        {% if collection.config_metadata.inputs %}<strong>Inputs:</strong> {{ collection.config_metadata.inputs }}{% endif %}{% if collection.config_metadata.inputs and collection.config_metadata.output %} {% endif %}{% if collection.config_metadata.output %}<strong>Outputs:</strong> {{ collection.config_metadata.output }}{% endif %}{% if collection.config_metadata.length_constraint_display %} {{ collection.config_metadata.length_constraint_display }}{% endif %}{% if collection.config_metadata.prompts %} <span class="prompt-hover" onclick="event.stopPropagation(); showPromptPopover(event, 'summarization/{{ collection.config_metadata.prompts }}')"><strong>Prompts</strong></span>{% endif %}
                                     </div>
                                     {% endif %}
                                 </div>
@@ -1601,7 +1624,7 @@
                                             <div class="metadata-item">
                                                 <span class="metadata-label"><strong>Prompts:</strong></span>
                                                 <span class="metadata-value">
-                                                    <span class="prompt-hover" onclick="showPromptPopover(event, '{{ collection.config_metadata.prompts }}')">
+                                                    <span class="prompt-hover" onclick="showPromptPopover(event, 'summarization/{{ collection.config_metadata.prompts }}')">
                                                         {{ collection.config_metadata.prompts }}
                                                     </span>
                                                 </span>
@@ -1638,20 +1661,20 @@
                             
                             <!-- Whodunit Evaluations for this summary collection -->
                             {% if dataset == "bmds" and item.eval_data %}
+                                <hr style="margin: 24px 0; border: none; border-top: 2px solid #374151;">
                                 {% for eval in item.eval_data %}
                                     {% if eval.input_type == "summaries" and collection.collection_name in eval.source_collection %}
                                     <div class="collapsible-section" style="margin-top: 16px; border: 1px solid #e5e7eb;">
                                         <div class="section-header" onclick="toggleSection('summary-whodunit-eval-{{ outer_loop_index }}-{{ loop.index }}')">
                                             <div class="section-header-left">
                                                 <span class="section-icon">🔍</span>
-                                                <span class="section-title">Whodunit Evaluation</span>
-                                                <span class="eval-input-type">(input: {{ eval.input_type }})</span>
+                                                <span class="section-title">Whodunit Eval {% if eval.selected_range == "last" or eval.selected_range == "all" %}(Source){% else %}(Source-sleuth){% endif %}</span>
                                             </div>
                                             <span class="toggle-icon" id="summary-whodunit-eval-{{ outer_loop_index }}-{{ loop.index }}-icon">▶</span>
                                         </div>
                                         <div class="section-content collapsed" id="summary-whodunit-eval-{{ outer_loop_index }}-{{ loop.index }}">
                                             <!-- Config dropdown -->
-                                            <div class="collapsible-section" style="margin-bottom: 16px; border: 1px solid #d1d5db;">
+                                            <div class="collapsible-section eval-config-dropdown" style="border: 1px solid #d1d5db;">
                                                 <div class="section-header" onclick="toggleSection('summary-eval-config-{{ outer_loop_index }}-{{ loop.index }}')">
                                                     <div class="section-header-left">
                                                         <span class="section-icon">⚙️</span>
@@ -1663,7 +1686,7 @@
                                                                                                                 <div class="config-grid">
                                                                 <div class="config-item"><strong>Model:</strong> {{ eval.model }}</div>
                                                                 <div class="config-item"><strong>Selected Range:</strong> {{ eval.selected_range }}</div>
-                                                                <div class="config-item"><strong>Prompt:</strong> {{ eval.prompt_name }}</div>
+                                                                <div class="config-item"><strong>Prompt:</strong> <span class="prompt-hover" onclick="showPromptPopover(event, 'extrinsic-eval/{{ eval.prompt_name }}')">{{ eval.prompt_name }}</span></div>
                                                                 <div class="config-item"><strong>Input Type:</strong> {{ eval.input_type }}</div>
                                                                 <div class="config-item"><strong>Source Collection:</strong> {{ collection.collection_name }}</div>
                                                             </div>
@@ -1745,11 +1768,11 @@
                                                             </div>
                                                             
                                                             <!-- Scoring Section -->
-                                                            <div class="analysis-dropdown">
-                                                                <div class="analysis-header" onclick="toggleSection('eval-scoring-{{ loop.index }}')">
+                                                            <div class="analysis-dropdown scoring-dropdown">
+                                                                <div class="analysis-header scoring-header" onclick="toggleSection('eval-scoring-{{ loop.index }}')">
                                                                     <span class="analysis-title">
                                                                         Scoring 
-                                                                        <span class="prompt-link" onclick="event.stopPropagation(); showPromptPopover(event, 'scoring-{{ loop.index }}')">
+                                                                        <span class="prompt-link" onclick="event.stopPropagation(); showScoringPromptPopover('scoring-{{ loop.index }}-popover')">
                                                                             (prompt)
                                                                         </span>
                                                                     </span>
@@ -1993,7 +2016,7 @@
                             <h4>Prompts: ${data.prompt_name}</h4>
                             ${data.prompts.map(prompt => `
                                 <div class="prompt-filename">${prompt.filename}</div>
-                                <div class="prompt-content">${prompt.content}</div>
+                                <div class="prompt-content">${prompt.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
                             `).join('')}
                         `;
                     } else {
@@ -2018,6 +2041,8 @@
                 currentPopover = null;
             }
         }
+
+
 
         // Hide popover when clicking elsewhere
         document.addEventListener('click', function(event) {
