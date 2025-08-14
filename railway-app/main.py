@@ -760,6 +760,82 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                                 with open(eval_item_file, 'r') as f:
                                     eval_content = json.load(f)
                                 
+                                # If solution_correctness_assessment is None or has missing fields, fill in with "LM EVAL FAILED"
+                                sca = eval_content.get("solution_correctness_assessment")
+                                if sca is None:
+                                    # Create complete default structure
+                                    eval_content["solution_correctness_assessment"] = {
+                                        "culprit": {
+                                            "culprit_correct": "LM EVAL FAILED",
+                                            "minor_errors": {
+                                                "culprit_missing_or_wrong_alias": "LM EVAL FAILED",
+                                                "hallucinated_part_of_name": "LM EVAL FAILED",
+                                                "missing_part_of_name": "LM EVAL FAILED",
+                                                "included_accomplice": "LM EVAL FAILED"
+                                            },
+                                            "major_errors": {
+                                                "different_suspect_not_accomplice": "LM EVAL FAILED",
+                                                "confused_swapped_culprit_and_accomplice": "LM EVAL FAILED",
+                                                "missing_real_name_only_has_alias": "LM EVAL FAILED",
+                                                "included_other_non_accomplice_suspects": "LM EVAL FAILED"
+                                            }
+                                        },
+                                        "accomplice": {
+                                            "accomplice_correct": "LM EVAL FAILED",
+                                            "minor_errors": {
+                                                "accomplice_missing_or_wrong_alias": "LM EVAL FAILED",
+                                                "hallucinated_part_of_name": "LM EVAL FAILED",
+                                                "missing_part_of_name": "LM EVAL FAILED",
+                                                "included_culprit": "LM EVAL FAILED"
+                                            },
+                                            "major_errors": {
+                                                "different_suspect_not_culprit": "LM EVAL FAILED",
+                                                "confused_swapped_accomplice_and_culprit": "LM EVAL FAILED",
+                                                "missing_real_name_only_has_alias": "LM EVAL FAILED",
+                                                "included_other_non_culprit_suspects": "LM EVAL FAILED"
+                                            }
+                                        }
+                                    }
+                                else:
+                                    # Fix any missing fields in existing structure
+                                    # Ensure culprit section exists and is complete
+                                    if "culprit" not in sca or sca["culprit"] is None:
+                                        sca["culprit"] = {}
+                                    culprit = sca["culprit"]
+                                    if "culprit_correct" not in culprit or culprit["culprit_correct"] is None:
+                                        culprit["culprit_correct"] = "LM EVAL FAILED"
+                                    if "minor_errors" not in culprit or culprit["minor_errors"] is None:
+                                        culprit["minor_errors"] = {}
+                                    minor_errors = culprit["minor_errors"]
+                                    for field in ["culprit_missing_or_wrong_alias", "hallucinated_part_of_name", "missing_part_of_name", "included_accomplice"]:
+                                        if field not in minor_errors or minor_errors[field] is None:
+                                            minor_errors[field] = "LM EVAL FAILED"
+                                    if "major_errors" not in culprit or culprit["major_errors"] is None:
+                                        culprit["major_errors"] = {}
+                                    major_errors = culprit["major_errors"]
+                                    for field in ["different_suspect_not_accomplice", "confused_swapped_culprit_and_accomplice", "missing_real_name_only_has_alias", "included_other_non_accomplice_suspects"]:
+                                        if field not in major_errors or major_errors[field] is None:
+                                            major_errors[field] = "LM EVAL FAILED"
+                                    
+                                    # Ensure accomplice section exists and is complete
+                                    if "accomplice" not in sca or sca["accomplice"] is None:
+                                        sca["accomplice"] = {}
+                                    accomplice = sca["accomplice"]
+                                    if "accomplice_correct" not in accomplice or accomplice["accomplice_correct"] is None:
+                                        accomplice["accomplice_correct"] = "LM EVAL FAILED"
+                                    if "minor_errors" not in accomplice or accomplice["minor_errors"] is None:
+                                        accomplice["minor_errors"] = {}
+                                    minor_errors = accomplice["minor_errors"]
+                                    for field in ["accomplice_missing_or_wrong_alias", "hallucinated_part_of_name", "missing_part_of_name", "included_culprit"]:
+                                        if field not in minor_errors or minor_errors[field] is None:
+                                            minor_errors[field] = "LM EVAL FAILED"
+                                    if "major_errors" not in accomplice or accomplice["major_errors"] is None:
+                                        accomplice["major_errors"] = {}
+                                    major_errors = accomplice["major_errors"]
+                                    for field in ["different_suspect_not_culprit", "confused_swapped_accomplice_and_culprit", "missing_real_name_only_has_alias", "included_other_non_culprit_suspects"]:
+                                        if field not in major_errors or major_errors[field] is None:
+                                            major_errors[field] = "LM EVAL FAILED"
+                                
                                 # Extract key evaluation metadata
                                 eval_info = {
                                     "collection_name": eval_collection_dir.name,
@@ -767,8 +843,8 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                                     "selected_range": eval_content.get("item_metadata", {}).get("selected_range", "unknown"),
                                     "model": eval_content.get("evaluation_metadata", {}).get("model", "unknown"),
                                     "prompt_name": eval_content.get("evaluation_metadata", {}).get("prompt_name", "unknown"),
-                                    "culprit_correct": eval_content.get("solution_correctness_assessment", {}).get("culprit", {}).get("culprit_correct", "unknown"),
-                                    "accomplice_correct": eval_content.get("solution_correctness_assessment", {}).get("accomplice", {}).get("accomplice_correct", "unknown"),
+                                    "culprit_correct": eval_content["solution_correctness_assessment"]["culprit"]["culprit_correct"],
+                                    "accomplice_correct": eval_content["solution_correctness_assessment"]["accomplice"]["accomplice_correct"],
                                     "predicted_culprit": eval_content.get("parsed_response", {}).get("main_culprits", "unknown"),
                                     "predicted_accomplice": eval_content.get("parsed_response", {}).get("accomplices", "unknown"),
                                     "reasoning": eval_content.get("parsed_response", {}).get("thought_process", "")[:500] + "..." if len(eval_content.get("parsed_response", {}).get("thought_process", "")) > 500 else eval_content.get("parsed_response", {}).get("thought_process", ""),
