@@ -11,6 +11,7 @@ import logging
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any
+from urllib.parse import unquote
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
@@ -87,6 +88,8 @@ async def clear_data():
 async def debug_item(dataset: str, subcollection: str, item_id: str):
     """Debug endpoint to check summary data."""
     try:
+        # URL decode the item_id to handle special characters like '?'
+        item_id = unquote(item_id)
         item_data = await get_item_details(dataset, subcollection, item_id)
         summary_info = {
             "has_summary_data": item_data.get("summary_data") is not None and len(item_data.get("summary_data", [])) > 0,
@@ -199,6 +202,8 @@ async def delete_file(path: str):
     Delete a specific file from the dashboard storage.
     """
     try:
+        # URL decode the path to handle special characters like '?'
+        path = unquote(path)
         file_path = DATA_DIR / path
         
         if not file_path.exists():
@@ -315,6 +320,8 @@ async def item_detail(request: Request, dataset: str, subcollection: str, item_i
     """
     Item detail page with collapsible sections (like detective story detail).
     """
+    # URL decode the item_id to handle special characters like '?'
+    item_id = unquote(item_id)
     item_data = await get_item_details(dataset, subcollection, item_id)
     
     return templates.TemplateResponse("item_detail.html", {
@@ -468,6 +475,20 @@ async def get_collection_items(dataset: str, subcollection: str = None):
                                 
                                 title = doc_meta.get("title", "")
                                 author = doc_meta.get("author", "")
+                                
+                            elif dataset == "true-detective":
+                                # For true-detective, use item_id as title and extract first chunk as description
+                                title = content.get("item_metadata", {}).get("item_id", "")
+                                author = ""  # No author info available
+                                
+                                # Get first chunk as description preview
+                                first_chunk = ""
+                                if content.get("documents") and content["documents"][0].get("chunks"):
+                                    first_chunk = content["documents"][0]["chunks"][0]
+                                    # Truncate to reasonable length for preview
+                                    if len(first_chunk) > 200:
+                                        first_chunk = first_chunk[:200] + "..."
+                                description = first_chunk
                                 # No description for squality as requested
                             
                             # Truncate description to 192 characters
@@ -703,6 +724,27 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                 "author": author,
                 "publication_year": ""  # No publication year in squality
             }
+            
+        # Extract true-detective-specific metadata
+        elif dataset == "true-detective":
+            # For true-detective, use item_id as title and extract first chunk as plot summary
+            title = content.get("item_metadata", {}).get("item_id", "")
+            
+            # Get first chunk as plot summary preview
+            first_chunk = ""
+            if content.get("documents") and content["documents"][0].get("chunks"):
+                first_chunk = content["documents"][0]["chunks"][0]
+                # Truncate to reasonable length for plot summary
+                if len(first_chunk) > 300:
+                    first_chunk = first_chunk[:300] + "..."
+            
+            # Create story info for true-detective
+            story_info = {
+                "title": title,
+                "plot_summary": first_chunk,
+                "author": "",  # No author info available
+                "publication_year": ""  # No publication year available
+            }
         
         # Try to load eval data for BMDS items
         eval_data = []
@@ -862,7 +904,7 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
             "content": content.get("content", ""),
             "chunk_metadata": chunk_metadata,
             "crimes_metadata": crimes_metadata,
-            "story_info": story_info if dataset in ["bmds", "detectiveqa", "squality"] else {},
+            "story_info": story_info if dataset in ["bmds", "detectiveqa", "squality", "true-detective"] else {},
             "full_content": content,
             "summary_data": summary_data,  # New field for summaries
             "grouped_summaries": grouped_summaries,  # Hierarchical grouping

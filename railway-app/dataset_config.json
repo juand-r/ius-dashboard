@@ -14,5 +14,11 @@
   "booookscore": {
     "display_name": "BooookScore",
     "description": "All books from the BooookScore dataset (https://github.com/lilakk/BooookScore)"
+  },
+  "true-detective": {
+    "display_name": "True Detective",
+    "description": "Short detective stories from True Detective (https://github.com/TartuNLP/true-detective), sourced from 5minutemystery.com"
   }
+
+
 }

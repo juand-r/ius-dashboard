@@ -9,6 +9,7 @@ import requests
 import logging
 import os
 from pathlib import Path
+from urllib.parse import quote
 from config import get_target_urls, PROJECT_ROOT, WATCHED_DIRS, WATCH_PATTERNS
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
@@ -147,7 +148,9 @@ def delete_file_from_server(target_url, file_path):
         logger.info(f"Deleting {file_path} from {target_url}")
         # Check if this specific file needs authentication
         auth = get_auth_for_url(target_url, file_path)
-        response = requests.delete(f"{target_url}/api/files/{file_path}", timeout=30, auth=auth)
+        # URL encode the file path to handle special characters like '?'
+        encoded_file_path = quote(file_path, safe='/')
+        response = requests.delete(f"{target_url}/api/files/{encoded_file_path}", timeout=30, auth=auth)
         
         if response.status_code == 200:
             logger.info(f"✅ Successfully deleted: {file_path}")

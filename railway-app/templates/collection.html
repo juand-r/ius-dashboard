@@ -249,7 +249,7 @@
             {% if items %}
             <div class="items-grid" id="items-grid">
                 {% for item in items %}
-                <a href="/{{ dataset }}/{{ subcollection }}/item/{{ item.id }}" class="item-card">
+                                        <a href="/{{ dataset }}/{{ subcollection }}/item/{{ item.id | urlencode }}" class="item-card">
                     {% if dataset in ["bmds", "detectiveqa", "squality"] and item.title %}
                     <!-- Rich tile format for bmds, detectiveqa, and squality -->
                     <div class="rich-tile">
