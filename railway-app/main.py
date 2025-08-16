@@ -683,6 +683,28 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                 "publication_year": pub_year
             }
         
+        elif dataset == "true-detective":
+            doc_meta = content.get("documents", [{}])[0].get("metadata", {}).get("original_metadata", {}).get("original_metadata", {}) if content.get("documents") else {}
+            
+            crimes_metadata = {
+                "solve_rate": doc_meta.get("solve_rate", ""),
+                "attempts": doc_meta.get("attempts", ""),
+                "answer_options": doc_meta.get("answer_options", ""),
+                "correct_answer": doc_meta.get("correct_answer", ""),
+                "text_length": doc_meta.get("text_length", ""),
+                "case_url": doc_meta.get("case_url", ""),
+                "case_id": doc_meta.get("case_id", ""),
+                "author_name": doc_meta.get("author_name", "")
+            }
+            
+            # Extract story information
+            story_info = {
+                "title": doc_meta.get("case_name", ""),
+                "plot_summary": doc_meta.get("mystery_text", "")[:300] + "..." if doc_meta.get("mystery_text", "") else "",
+                "author": doc_meta.get("author_name", ""),
+                "publication_year": ""
+            }
+        
         # Extract detectiveqa-specific metadata
         elif dataset == "detectiveqa":
             doc_meta = content.get("documents", [{}])[0].get("metadata", {}).get("original_metadata", {}) if content.get("documents") else {}
@@ -746,9 +768,9 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                 "publication_year": ""  # No publication year available
             }
         
-        # Try to load eval data for BMDS items
+        # Try to load eval data for BMDS and true-detective items
         eval_data = []
-        if dataset == "bmds":
+        if dataset in ["bmds", "true-detective"]:
             eval_dir = DATA_DIR / "outputs" / "eval" / "extrinsic"
             if eval_dir.exists():
                 for eval_collection_dir in eval_dir.iterdir():

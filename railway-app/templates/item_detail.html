@@ -961,7 +961,7 @@
                 {% endif %}
                 {% if item.story_info.plot_summary %}
                 <div class="story-summary">
-                    {% if dataset == "bmds" %}
+                    {% if dataset in ["bmds", "true-detective"] %}
                     <h3>Plot Summary</h3>
                     {% elif dataset == "detectiveqa" %}
                     <h3>Questions</h3>
@@ -1030,17 +1030,18 @@
                 </div>
             </div>
 
-            <!-- Crimes and Clues Section (BMDS only) -->
-            {% if dataset == "bmds" and item.crimes_metadata %}
+            <!-- Crimes and Clues Section (BMDS and true-detective) -->
+            {% if dataset in ["bmds", "true-detective"] and item.crimes_metadata %}
             <div class="collapsible-section">
                 <div class="section-header" onclick="toggleSection('crimes-clues')">
                     <div class="section-header-left">
                         <span class="section-icon">🔍</span>
-                        <span class="section-title">Crimes and Clues</span>
+                        <span class="section-title">{% if dataset == "bmds" %}Crimes and Clues{% elif dataset == "true-detective" %}Case Metadata{% endif %}</span>
                     </div>
                     <span class="toggle-icon" id="crimes-clues-icon">▶</span>
                 </div>
                 <div class="section-content collapsed" id="crimes-clues">
+                    {% if dataset == "bmds" %}
                     <div class="metadata-grid-2col">
                         <div class="metadata-column">
                             <!-- Victim/Culprit Counts -->
@@ -1099,6 +1100,43 @@
                             </div>
                         </div>
                     </div>
+                    {% elif dataset == "true-detective" %}
+                    <div class="metadata-grid-2col">
+                        <div class="metadata-column">
+                            <!-- Case Information -->
+                            <div class="metadata-row">
+                                <strong>Case ID:</strong> {{ item.crimes_metadata.case_id }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Author:</strong> {{ item.crimes_metadata.author_name }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Text Length:</strong> {{ item.crimes_metadata.text_length }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Attempts:</strong> {{ item.crimes_metadata.attempts }}
+                            </div>
+                        </div>
+                        
+                        <div class="metadata-column">
+                            <!-- Puzzle Information -->
+                            <div class="metadata-row">
+                                <strong>Solve Rate:</strong> {{ item.crimes_metadata.solve_rate }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Correct Answer:</strong> {{ item.crimes_metadata.correct_answer }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Answer Options:</strong> {{ item.crimes_metadata.answer_options if item.crimes_metadata.answer_options else "None" }}
+                            </div>
+                            {% if item.crimes_metadata.case_url %}
+                            <div class="metadata-row">
+                                <strong>Case URL:</strong> <a href="{{ item.crimes_metadata.case_url }}" target="_blank">{{ item.crimes_metadata.case_url }}</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
@@ -1372,7 +1410,7 @@
                             {% endfor %}
                             
                             <!-- Whodunit Evaluations (BMDS only, chunks input type) -->
-                            {% if dataset == "bmds" and item.eval_data %}
+                            {% if dataset in ["bmds", "true-detective"] and item.eval_data %}
                                 <hr style="margin: 24px 0; border: none; border-top: 2px solid #374151;">
                                 {% for eval in item.eval_data %}
                                     {% if eval.input_type == "chunks" %}
@@ -1660,7 +1698,7 @@
                             {% endfor %}
                             
                             <!-- Whodunit Evaluations for this summary collection -->
-                            {% if dataset == "bmds" and item.eval_data %}
+                            {% if dataset in ["bmds", "true-detective"] and item.eval_data %}
                                 <hr style="margin: 24px 0; border: none; border-top: 2px solid #374151;">
                                 {% for eval in item.eval_data %}
                                     {% if eval.input_type == "summaries" and collection.collection_name in eval.source_collection %}
