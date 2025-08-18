@@ -1871,6 +1871,92 @@
                                     {% endif %}
                                 {% endfor %}
                             {% endif %}
+                            
+                            <!-- Entity Coverage Evaluations for this summary collection -->
+                            {% if dataset in ["bmds", "true-detective"] and item.entity_coverage_data %}
+                                {% for entity_eval in item.entity_coverage_data %}
+                                    {% if entity_eval.input_type == "summaries" and collection.collection_name in entity_eval.source_collection %}
+                                    <div class="collapsible-section" style="margin-top: 16px; border: 1px solid #e5e7eb;">
+                                        <div class="section-header" onclick="toggleSection('summary-entity-eval-{{ outer_loop_index }}-{{ loop.index }}')">
+                                            <div class="section-header-left">
+                                                <span class="section-icon">🏷️</span>
+                                                <span class="section-title">Entity Coverage Eval</span>
+                                            </div>
+                                            <span class="toggle-icon" id="summary-entity-eval-{{ outer_loop_index }}-{{ loop.index }}-icon">▶</span>
+                                        </div>
+                                        <div class="section-content collapsed" id="summary-entity-eval-{{ outer_loop_index }}-{{ loop.index }}">
+                                            <!-- Config dropdown -->
+                                            <div class="collapsible-section eval-config-dropdown" style="border: 1px solid #d1d5db;">
+                                                <div class="section-header" onclick="toggleSection('summary-entity-config-{{ outer_loop_index }}-{{ loop.index }}')">
+                                                    <div class="section-header-left">
+                                                        <span class="section-icon">⚙️</span>
+                                                        <span class="section-title">Config</span>
+                                                    </div>
+                                                    <span class="toggle-icon" id="summary-entity-config-{{ outer_loop_index }}-{{ loop.index }}-icon">▶</span>
+                                                </div>
+                                                <div class="section-content collapsed" id="summary-entity-config-{{ outer_loop_index }}-{{ loop.index }}">
+                                                    <div class="metadata-grid-2col">
+                                                        <div class="metadata-column">
+                                                            <div class="metadata-row">
+                                                                <strong>Model:</strong> {{ entity_eval.model }}
+                                                            </div>
+                                                            <div class="metadata-row">
+                                                                <strong>Input Type:</strong> {{ entity_eval.input_type }}
+                                                            </div>
+                                                            <div class="metadata-row">
+                                                                <strong>Selected Range:</strong> {{ entity_eval.selected_range }}
+                                                            </div>
+                                                        </div>
+                                                        <div class="metadata-column">
+                                                            <div class="metadata-row">
+                                                                <strong>Prompt:</strong> {{ entity_eval.prompt_name }}
+                                                            </div>
+                                                            <div class="metadata-row">
+                                                                <strong>Collection:</strong> {{ entity_eval.collection_name }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Entity Analysis (directly displayed) -->
+                                            <div style="margin-top: 16px;">
+                                                <div class="metadata-grid-2col">
+                                                    <div class="metadata-column">
+                                                        <div class="metadata-row">
+                                                            <strong>Matched Entities:</strong>
+                                                            <ul style="margin-top: 8px; padding-left: 20px;">
+                                                                {% for match in entity_eval.intersection_entities %}
+                                                                <li>{{ match[0] }} ↔ {{ match[1] }}</li>
+                                                                {% endfor %}
+                                                            </ul>
+                                                        </div>
+                                                        <div class="metadata-row">
+                                                            <strong>Summary-Only Entities:</strong>
+                                                            <ul style="margin-top: 8px; padding-left: 20px;">
+                                                                {% for entity in entity_eval.summary_only_entities %}
+                                                                <li>{{ entity }}</li>
+                                                                {% endfor %}
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                    <div class="metadata-column">
+                                                        <div class="metadata-row">
+                                                            <strong>Source-Only Entities:</strong>
+                                                            <ul style="margin-top: 8px; padding-left: 20px; max-height: 200px; overflow-y: auto;">
+                                                                {% for entity in entity_eval.source_only_entities %}
+                                                                <li>{{ entity }}</li>
+                                                                {% endfor %}
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}

@@ -770,7 +770,9 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
         
         # Try to load eval data for BMDS and true-detective items
         eval_data = []
+        entity_coverage_data = []
         if dataset in ["bmds", "true-detective"]:
+            # Load extrinsic evaluations (whodunit)
             eval_dir = DATA_DIR / "outputs" / "eval" / "extrinsic"
             if eval_dir.exists():
                 for eval_collection_dir in eval_dir.iterdir():
@@ -876,6 +878,43 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                                 eval_data.append(eval_info)
                             except Exception as e:
                                 logger.error(f"Error reading eval file {eval_item_file}: {e}")
+                                continue
+            
+            # Load intrinsic evaluations (entity coverage)
+            intrinsic_eval_dir = DATA_DIR / "outputs" / "eval" / "intrinsic" / "entity-coverage"
+            if intrinsic_eval_dir.exists():
+                for eval_collection_dir in intrinsic_eval_dir.iterdir():
+                    if eval_collection_dir.is_dir() and "entity_coverage" in eval_collection_dir.name:
+                        eval_items_dir = eval_collection_dir / "items"
+                        eval_item_file = eval_items_dir / f"{item_id}.json"
+                        if eval_item_file.exists():
+                            try:
+                                with open(eval_item_file, 'r') as f:
+                                    eval_content = json.load(f)
+                                
+                                # Extract key entity coverage metadata
+                                entity_eval_info = {
+                                    "collection_name": eval_collection_dir.name,
+                                    "input_type": eval_content.get("item_metadata", {}).get("input_type", "unknown"),
+                                    "selected_range": eval_content.get("item_metadata", {}).get("selected_range", "unknown"),
+                                    "model": eval_content.get("evaluation_metadata", {}).get("model", "unknown"),
+                                    "prompt_name": eval_content.get("evaluation_metadata", {}).get("prompt_name", "unknown"),
+                                    "source_collection": eval_content.get("evaluation_metadata", {}).get("command_run", ""),
+                                    "metrics": eval_content.get("entity_analysis", {}).get("metrics", {}),
+                                    "num_source_entities": eval_content.get("entity_analysis", {}).get("metrics", {}).get("num_source_entities", 0),
+                                    "num_summary_entities": eval_content.get("entity_analysis", {}).get("metrics", {}).get("num_summary_entities", 0),
+                                    "num_matched_entities": eval_content.get("entity_analysis", {}).get("metrics", {}).get("num_matched_entities", 0),
+                                    "jaccard_similarity": eval_content.get("entity_analysis", {}).get("metrics", {}).get("jaccard_similarity", 0),
+                                    "recall": eval_content.get("entity_analysis", {}).get("metrics", {}).get("recall", 0),
+                                    "precision": eval_content.get("entity_analysis", {}).get("metrics", {}).get("precision", 0),
+                                    "intersection_entities": eval_content.get("entity_analysis", {}).get("intersection", []),
+                                    "summary_only_entities": eval_content.get("entity_analysis", {}).get("summary_only", []),
+                                    "source_only_entities": eval_content.get("entity_analysis", {}).get("source_only", []),
+                                    "full_eval_data": eval_content
+                                }
+                                entity_coverage_data.append(entity_eval_info)
+                            except Exception as e:
+                                logger.error(f"Error reading entity coverage eval file {eval_item_file}: {e}")
                                 continue
 
         # Try to load summary data from all matching collections
@@ -1007,6 +1046,7 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
             "summary_data": summary_data,  # New field for summaries
             "grouped_summaries": grouped_summaries,  # Hierarchical grouping
             "eval_data": eval_data,  # New field for evaluations
+            "entity_coverage_data": entity_coverage_data,  # New field for entity coverage evaluations
             "file_size": item_file.stat().st_size,
             "modified": datetime.fromtimestamp(item_file.stat().st_mtime).isoformat()
         }
