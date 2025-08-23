@@ -961,7 +961,7 @@
                 {% endif %}
                 {% if item.story_info.plot_summary %}
                 <div class="story-summary">
-                    {% if dataset in ["bmds", "true-detective"] %}
+                    {% if dataset in ["bmds", "true-detective", "detectiveqa"] %}
                     <h3>Plot Summary</h3>
                     {% elif dataset == "detectiveqa" %}
                     <h3>Questions</h3>
@@ -1031,12 +1031,12 @@
             </div>
 
             <!-- Crimes and Clues Section (BMDS and true-detective) -->
-            {% if dataset in ["bmds", "true-detective"] and item.crimes_metadata %}
+            {% if dataset in ["bmds", "true-detective", "detectiveqa"] and item.crimes_metadata %}
             <div class="collapsible-section">
                 <div class="section-header" onclick="toggleSection('crimes-clues')">
                     <div class="section-header-left">
                         <span class="section-icon">🔍</span>
-                        <span class="section-title">{% if dataset == "bmds" %}Crimes and Clues{% elif dataset == "true-detective" %}Case Metadata{% endif %}</span>
+                        <span class="section-title">{% if dataset == "bmds" %}Crimes and Clues{% elif dataset == "true-detective" %}Case Metadata{% elif dataset == "detectiveqa" %}Questions Metadata{% endif %}</span>
                     </div>
                     <span class="toggle-icon" id="crimes-clues-icon">▶</span>
                 </div>
@@ -1134,6 +1134,40 @@
                                 <strong>Case URL:</strong> <a href="{{ item.crimes_metadata.case_url }}" target="_blank">{{ item.crimes_metadata.case_url }}</a>
                             </div>
                             {% endif %}
+                        </div>
+                    </div>
+                    {% elif dataset == "detectiveqa" %}
+                    <div class="metadata-grid-2col">
+                        <div class="metadata-column">
+                            <!-- Novel Information -->
+                            <div class="metadata-row">
+                                <strong>Novel ID:</strong> {{ item.crimes_metadata.novel_id }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Author:</strong> {{ item.crimes_metadata.author }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Title:</strong> {{ item.crimes_metadata.title }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Paragraphs:</strong> {{ item.crimes_metadata.num_paragraphs }}
+                            </div>
+                        </div>
+                        
+                        <div class="metadata-column">
+                            <!-- Question Information -->
+                            <div class="metadata-row">
+                                <strong>Time Cost:</strong> {{ item.crimes_metadata.time_cost }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Number of Questions:</strong> {{ item.crimes_metadata.num_questions }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>First Question:</strong> {{ item.crimes_metadata.first_question[:100] + "..." if item.crimes_metadata.first_question|length > 100 else item.crimes_metadata.first_question }}
+                            </div>
+                            <div class="metadata-row">
+                                <strong>Correct Answer:</strong> {{ item.crimes_metadata.correct_answer }} - {{ item.crimes_metadata.answer_options.get(item.crimes_metadata.correct_answer, "Unknown") }}
+                            </div>
                         </div>
                     </div>
                     {% endif %}
@@ -1399,7 +1433,7 @@
                                 <div class="section-header" onclick="toggleSection('chunk-{{ loop.index }}')">
                                     <div class="section-header-left">
                                         <span class="section-icon">📝</span>
-                                        <span class="section-title">Chunk {{ loop.index }}{% if (subcollection == "bmds_fixed_size2_8000" or subcollection.startswith("true-detective_")) and loop.last %} (Reveal){% endif %}</span>
+                                        <span class="section-title">Chunk {{ loop.index }}{% if (subcollection == "bmds_fixed_size2_8000" or subcollection.startswith("true-detective_") or subcollection.startswith("detectiveqa_")) and loop.last %} (Reveal){% endif %}</span>
                                     </div>
                                     <span class="toggle-icon" id="chunk-{{ loop.index }}-icon">▶</span>
                                 </div>

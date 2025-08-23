@@ -705,30 +705,31 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                 "publication_year": ""
             }
         
-        # Extract detectiveqa-specific metadata
         elif dataset == "detectiveqa":
             doc_meta = content.get("documents", [{}])[0].get("metadata", {}).get("original_metadata", {}) if content.get("documents") else {}
             
-            # Extract title and author
-            title = doc_meta.get("title", "")
-            author = doc_meta.get("author", "")
+            # Extract questions info
+            questions = doc_meta.get("questions", [])
+            first_question = questions[0] if questions else {}
             
-            # Extract questions and concatenate them
-            questions_list = doc_meta.get("questions", [])
-            questions_text = ""
-            if questions_list:
-                question_texts = []
-                for q in questions_list:
-                    if isinstance(q, dict) and "question" in q:
-                        question_texts.append(q["question"])
-                questions_text = " ".join(question_texts)
+            crimes_metadata = {
+                "novel_id": doc_meta.get("novel_id", ""),
+                "author": doc_meta.get("author", ""),
+                "title": doc_meta.get("title", ""),
+                "num_paragraphs": doc_meta.get("num_paragraphs", ""),
+                "time_cost": doc_meta.get("time_cost", ""),
+                "num_questions": len(questions),
+                "first_question": first_question.get("question", ""),
+                "answer_options": first_question.get("options", {}),
+                "correct_answer": first_question.get("answer", "")
+            }
             
-            # Create story info for detectiveqa
+            # Extract story information
             story_info = {
-                "title": title,
-                "plot_summary": questions_text,  # Using questions as plot summary equivalent
-                "author": author,
-                "publication_year": ""  # No publication year in detectiveqa
+                "title": doc_meta.get("title", ""),
+                "plot_summary": first_question.get("question", "")[:300] + "..." if first_question.get("question", "") else "",
+                "author": doc_meta.get("author", ""),
+                "publication_year": ""
             }
         
         # Extract squality-specific metadata
@@ -768,10 +769,10 @@ async def get_item_details(dataset: str, subcollection: str, item_id: str):
                 "publication_year": ""  # No publication year available
             }
         
-        # Try to load eval data for BMDS and true-detective items
+        # Try to load eval data for BMDS, true-detective, and detectiveqa items
         eval_data = []
         entity_coverage_data = []
-        if dataset in ["bmds", "true-detective"]:
+        if dataset in ["bmds", "true-detective", "detectiveqa"]:
             # Load extrinsic evaluations (whodunit)
             eval_dir = DATA_DIR / "outputs" / "eval" / "extrinsic"
             if eval_dir.exists():
